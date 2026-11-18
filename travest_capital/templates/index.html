@@ -1,0 +1,2074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>TravestCapital (TC) — Institutional Wealth & Equity Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<style>
+  :root {
+    --bg: #f4f7fb;
+    --surface: #ffffff;
+    --surface-soft: #eef3f9;
+    --ink: #0f172a;
+    --ink-muted: #475569;
+    --ink-light: #94a3b8;
+    --brand-navy: #0a192f;
+    --brand-blue: #1d4ed8;
+    --brand-emerald: #059669;
+    --brand-gold: #d97706;
+    --brand-amber-bg: #fef3c7;
+    --danger: #dc2626;
+    --border: #e2e8f0;
+    --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.05);
+    --shadow-md: 0 10px 28px rgba(15, 23, 42, 0.08);
+    --shadow-lg: 0 20px 50px rgba(10, 25, 47, 0.16);
+    --radius-lg: 20px;
+    --radius-md: 14px;
+    --radius-sm: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Custom TC Monogram Logo */
+  .tc-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    user-select: none;
+  }
+  .tc-emblem {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #0a192f 0%, #1e3a8a 60%, #059669 100%);
+    display: grid;
+    place-items: center;
+    position: relative;
+    box-shadow: 0 6px 16px rgba(10, 25, 47, 0.25);
+    border: 1.5px solid rgba(255, 255, 255, 0.22);
+  }
+  .tc-emblem::after {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border-radius: 8px;
+    border: 1px solid rgba(251, 191, 36, 0.45);
+  }
+  .tc-emblem span {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: -0.5px;
+    background: linear-gradient(180deg, #ffffff 30%, #fde68a 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .tc-wordmark {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 19px;
+    letter-spacing: -0.4px;
+    color: var(--brand-navy);
+  }
+  .tc-wordmark small {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--brand-emerald);
+    background: #ecfdf5;
+    padding: 2px 6px;
+    border-radius: 6px;
+    margin-left: 4px;
+    vertical-align: middle;
+  }
+
+  /* ==========================================================================
+     3D INTERACTIVE LOGIN & REGISTRATION SCENE
+  ========================================================================== */
+  #auth-view {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(29, 78, 216, 0.14), transparent 42%),
+      radial-gradient(circle at 85% 80%, rgba(5, 150, 105, 0.14), transparent 42%),
+      linear-gradient(145deg, #071120 0%, #0f2342 52%, #0a192f 100%);
+    perspective: 1400px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Floating 3D geometric vault rings in background */
+  .orb-3d {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(1px);
+    pointer-events: none;
+    animation: float3d 9s ease-in-out infinite alternate;
+  }
+  .orb-1 {
+    width: 320px; height: 320px;
+    top: -80px; right: -60px;
+    background: radial-gradient(circle at 30% 30%, rgba(56, 189, 248, 0.25), rgba(29, 78, 216, 0.03));
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .orb-2 {
+    width: 260px; height: 260px;
+    bottom: -70px; left: -60px;
+    background: radial-gradient(circle at 30% 30%, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.03));
+    border: 1px solid rgba(255,255,255,0.08);
+    animation-delay: -4s;
+  }
+  @keyframes float3d {
+    0% { transform: translate3d(0, 0, 0) rotate(0deg); }
+    100% { transform: translate3d(18px, -22px, 30px) rotate(12deg); }
+  }
+
+  .auth-3d-stage {
+    width: 100%;
+    max-width: 440px;
+    transform-style: preserve-3d;
+    transition: transform 0.25s ease-out;
+    z-index: 2;
+  }
+
+  .auth-card-3d {
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(18px);
+    border-radius: 26px;
+    padding: 32px 28px;
+    box-shadow:
+      0 30px 70px rgba(0, 0, 0, 0.45),
+      0 0 0 1px rgba(255, 255, 255, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    transform: translateZ(24px);
+  }
+
+  .auth-switch-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: var(--surface-soft);
+    padding: 5px;
+    border-radius: 14px;
+    margin: 22px 0;
+  }
+  .auth-tab-btn {
+    border: none;
+    background: transparent;
+    padding: 11px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--ink-muted);
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+  .auth-tab-btn.active {
+    background: var(--surface);
+    color: var(--brand-navy);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+  }
+
+  .form-group { margin-bottom: 15px; }
+  .form-group label {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--ink-muted);
+    margin-bottom: 6px;
+    letter-spacing: 0.2px;
+  }
+  .input-3d {
+    width: 100%;
+    padding: 13px 15px;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-size: 14.5px;
+    font-family: inherit;
+    color: var(--ink);
+    background: #f8fafc;
+    transition: all 0.2s;
+  }
+  .input-3d:focus {
+    outline: none;
+    border-color: var(--brand-blue);
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(29, 78, 216, 0.1);
+  }
+
+  .btn-primary-3d {
+    width: 100%;
+    padding: 14px 18px;
+    border: none;
+    border-radius: 13px;
+    background: linear-gradient(135deg, #0a192f 0%, #1d4ed8 100%);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: 0 10px 22px rgba(29, 78, 216, 0.28);
+    transition: transform 0.15s, box-shadow 0.2s;
+  }
+  .btn-primary-3d:hover { transform: translateY(-1px); box-shadow: 0 14px 26px rgba(29, 78, 216, 0.35); }
+  .btn-primary-3d:active { transform: translateY(1px); }
+
+  .btn-emerald {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    box-shadow: 0 8px 20px rgba(5, 150, 105, 0.25);
+  }
+
+  /* ==========================================================================
+     3-SECOND SPARKLE STARS & WELCOME OVERLAY
+  ========================================================================== */
+  #welcome-sparkle-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: radial-gradient(circle at center, rgba(10, 25, 47, 0.92), rgba(7, 17, 32, 0.97));
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+    padding: 24px;
+    overflow: hidden;
+    animation: fadeOverlay 3s forwards;
+  }
+  @keyframes fadeOverlay {
+    0% { opacity: 0; }
+    12% { opacity: 1; }
+    82% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  .sparkle-star {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: #fde047;
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    animation: twinkleBurst 1.6s ease-out infinite;
+  }
+  @keyframes twinkleBurst {
+    0% { transform: scale(0.2) rotate(0deg); opacity: 0; }
+    50% { transform: scale(1.4) rotate(180deg); opacity: 1; }
+    100% { transform: scale(0.3) rotate(360deg); opacity: 0; }
+  }
+  .welcome-badge-card {
+    position: relative;
+    z-index: 2;
+    padding: 34px 36px;
+    border-radius: 26px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(253, 224, 71, 0.45);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+    transform: scale(0.92);
+    animation: popWelcome 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  @keyframes popWelcome {
+    to { transform: scale(1); }
+  }
+
+  /* ==========================================================================
+     MAIN APP SHELL (DESKTOP + ANDROID ADAPTIVE)
+  ========================================================================== */
+  #app-view { display: none; padding-bottom: 92px; }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+    padding: 13px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .container {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 18px 16px;
+  }
+
+  /* Desktop top nav pill bar (hidden on mobile, shown on wide screens) */
+  .desktop-nav {
+    display: none;
+    gap: 8px;
+    background: var(--surface-soft);
+    padding: 5px;
+    border-radius: 14px;
+  }
+  @media (min-width: 820px) {
+    .desktop-nav { display: flex; }
+    .bottom-nav { display: none !important; }
+    #app-view { padding-bottom: 32px; }
+  }
+  .nav-pill {
+    border: none;
+    background: transparent;
+    padding: 9px 16px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 13.5px;
+    color: var(--ink-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .nav-pill.active {
+    background: var(--brand-navy);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(10, 25, 47, 0.2);
+  }
+
+  /* Bottom Navigation for Mobile */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 60;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    padding: 8px 4px 10px;
+    box-shadow: 0 -6px 24px rgba(15, 23, 42, 0.06);
+  }
+  .bnav-item {
+    border: none;
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink-light);
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  .bnav-item svg { width: 22px; height: 22px; stroke-width: 2.1; }
+  .bnav-item.active { color: var(--brand-blue); }
+
+  /* Tab Pages */
+  .tab-section { display: none; animation: fadeIn 0.25s ease; }
+  .tab-section.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Greeting & Brand Carousel Banner */
+  .greeting-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .greeting-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 23px;
+    font-weight: 700;
+    color: var(--brand-navy);
+  }
+  .vip-pill-badge {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    color: #92400e;
+    border: 1px solid #f59e0b;
+    padding: 6px 13px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 800;
+  }
+
+  /* Hero Showcase Slider with Company Name */
+  .hero-carousel {
+    position: relative;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    height: 195px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow-md);
+    background: #0a192f;
+  }
+  .hero-slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 22px;
+    color: #ffffff;
+    background-size: cover;
+    background-position: center;
+  }
+  .hero-slide.active { opacity: 1; }
+  .hero-slide::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(10, 25, 47, 0.2) 0%, rgba(10, 25, 47, 0.88) 100%);
+  }
+  .hero-slide-content { position: relative; z-index: 2; }
+
+  /* Dual Wallet Grid */
+  .wallet-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  @media (min-width: 640px) { .wallet-grid { grid-template-columns: 1fr 1fr; } }
+
+  .wallet-card {
+    border-radius: var(--radius-lg);
+    padding: 22px;
+    color: #ffffff;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+  }
+  .wallet-product {
+    background: linear-gradient(135deg, #0a192f 0%, #1e3a8a 100%);
+  }
+  .wallet-earnings {
+    background: linear-gradient(135deg, #064e3b 0%, #059669 100%);
+  }
+  .wallet-label {
+    font-size: 12.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    opacity: 0.82;
+    font-weight: 700;
+  }
+  .wallet-amount {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 31px;
+    font-weight: 700;
+    margin: 8px 0 6px;
+  }
+  .wallet-sub { font-size: 12px; opacity: 0.8; }
+
+  /* Action Triggers (Click-to-reveal interactive forms) */
+  .action-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .action-trigger-btn {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 15px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-weight: 800;
+    font-size: 14.5px;
+    color: var(--brand-navy);
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s;
+  }
+  .action-trigger-btn:hover { border-color: var(--brand-blue); transform: translateY(-1px); }
+
+  .collapsible-drawer {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow-md);
+    animation: fadeIn 0.2s ease;
+  }
+  .collapsible-drawer.open { display: block; }
+
+  /* News Ticker / Announcements */
+  .card-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow-sm);
+  }
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .panel-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--brand-navy);
+  }
+
+  /* Upward Scrolling Withdrawal Records Ticker */
+  .ticker-viewport {
+    height: 185px;
+    overflow: hidden;
+    position: relative;
+    border-radius: 12px;
+    background: var(--surface-soft);
+    padding: 8px 12px;
+  }
+  .ticker-track {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    animation: scrollUpwards 18s linear infinite;
+  }
+  .ticker-viewport:hover .ticker-track { animation-play-state: paused; }
+  @keyframes scrollUpwards {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-50%); }
+  }
+  .ticker-row {
+    background: var(--surface);
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    border: 1px solid var(--border);
+  }
+
+  /* VIP Shares Grid */
+  .vip-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  @media (min-width: 700px) { .vip-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .vip-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px;
+    position: relative;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .vip-card.active-tier {
+    border-color: var(--brand-emerald);
+    background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%);
+  }
+  .vip-price-tag {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--brand-blue);
+    margin: 8px 0;
+  }
+  .vip-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    background: var(--surface-soft);
+    padding: 12px;
+    border-radius: 12px;
+    margin: 14px 0;
+    font-size: 13px;
+  }
+
+  /* Spin Vault Devices */
+  .device-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  @media (min-width: 680px) { .device-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .device-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+  }
+  .device-img-wrap {
+    height: 185px;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .device-img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .device-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+  .badge-free { background: #fef3c7; color: #92400e; border: 1px solid #f59e0b; }
+  .badge-sale { background: #dbeafe; color: #1e40af; border: 1px solid #3b82f6; }
+
+  /* Interactive Modal & Wheel */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(10, 25, 47, 0.72);
+    backdrop-filter: blur(6px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal-box {
+    background: var(--surface);
+    border-radius: 24px;
+    width: 100%;
+    max-width: 440px;
+    max-height: 92vh;
+    overflow-y: auto;
+    padding: 24px;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+  }
+
+  .wheel-stage {
+    position: relative;
+    width: 270px;
+    height: 270px;
+    margin: 16px auto;
+  }
+  .wheel-pointer {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 14px solid transparent;
+    border-right: 14px solid transparent;
+    border-top: 24px solid #dc2626;
+    z-index: 5;
+    filter: drop-shadow(0 3px 4px rgba(0,0,0,0.3));
+  }
+  #wheel-canvas {
+    width: 270px;
+    height: 270px;
+    border-radius: 50%;
+    border: 6px solid #0a192f;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.22);
+    transition: transform 4.2s cubic-bezier(0.15, 0.85, 0.22, 1);
+  }
+
+  /* Floating Live Chat Support Widget */
+  .chat-fab {
+    position: fixed;
+    right: 18px;
+    bottom: 84px;
+    z-index: 75;
+    background: linear-gradient(135deg, #0a192f, #1d4ed8);
+    color: #ffffff;
+    border: none;
+    border-radius: 999px;
+    padding: 13px 18px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-weight: 700;
+    font-size: 13.5px;
+    box-shadow: 0 12px 28px rgba(29, 78, 216, 0.35);
+    cursor: pointer;
+  }
+  @media (min-width: 820px) { .chat-fab { bottom: 26px; } }
+
+  .chat-drawer {
+    position: fixed;
+    right: 16px;
+    bottom: 84px;
+    width: calc(100% - 32px);
+    max-width: 380px;
+    height: 460px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    box-shadow: var(--shadow-lg);
+    z-index: 95;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .chat-drawer.open { display: flex; }
+  .chat-header {
+    background: var(--brand-navy);
+    color: #ffffff;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .chat-body {
+    flex: 1;
+    padding: 14px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #f8fafc;
+  }
+  .msg-bubble {
+    max-width: 80%;
+    padding: 10px 14px;
+    border-radius: 15px;
+    font-size: 13.5px;
+    line-height: 1.4;
+  }
+  .msg-user {
+    align-self: flex-end;
+    background: var(--brand-blue);
+    color: #ffffff;
+    border-bottom-right-radius: 4px;
+  }
+  .msg-admin {
+    align-self: flex-start;
+    background: #ffffff;
+    color: var(--ink);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 4px;
+  }
+  .chat-footer {
+    padding: 10px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    background: #ffffff;
+  }
+
+  /* Click-to-reveal rows in Mine tab */
+  .tap-setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 16px;
+    background: var(--surface-soft);
+    border-radius: 13px;
+    cursor: pointer;
+    font-weight: 700;
+    color: var(--brand-navy);
+    margin-bottom: 10px;
+    transition: background 0.2s;
+  }
+  .tap-setting-row:hover { background: #e2e8f0; }
+
+  /* Toast notification */
+  #toast {
+    position: fixed;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    background: #0a192f;
+    color: #ffffff;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 13.5px;
+    font-weight: 600;
+    z-index: 99999;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+    transition: transform 0.3s ease;
+    max-width: 90vw;
+    text-align: center;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- 3-SECOND SPARKLE STARS WELCOME OVERLAY -->
+<div id="welcome-sparkle-overlay">
+  <div id="sparkle-field"></div>
+  <div class="welcome-badge-card">
+    <div class="tc-emblem" style="margin: 0 auto 14px; width: 54px; height: 54px;">
+      <span style="font-size: 21px;">TC</span>
+    </div>
+    <div style="color: #fde047; font-size: 12px; font-weight: 800; letter-spacing: 1.8px; text-transform: uppercase;">Verified Shareholder Access</div>
+    <h2 id="sparkle-welcome-text" style="color: #ffffff; font-family: 'Space Grotesk', sans-serif; font-size: 26px; margin-top: 8px;">Welcome to TravestCapital</h2>
+    <p style="color: #cbd5e1; font-size: 13.5px; margin-top: 6px;">Preparing your portfolio & live yield terminal...</p>
+  </div>
+</div>
+
+<!-- ==========================================================================
+     3D LOGIN & REGISTRATION SCREEN
+========================================================================== -->
+<section id="auth-view">
+  <div class="orb-3d orb-1"></div>
+  <div class="orb-3d orb-2"></div>
+
+  <div class="auth-3d-stage" id="auth-stage">
+    <div class="auth-card-3d">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="tc-logo">
+          <div class="tc-emblem"><span>TC</span></div>
+          <div>
+            <div class="tc-wordmark">TravestCapital <small>TC</small></div>
+            <div style="font-size:11.5px; color:var(--ink-muted); font-weight:600;">Institutional Equity & Asset Vault</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="auth-switch-tabs">
+        <button class="auth-tab-btn active" id="tab-login-btn" onclick="switchAuthMode('login')">Sign In</button>
+        <button class="auth-tab-btn" id="tab-reg-btn" onclick="switchAuthMode('register')">Create Account</button>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <form id="login-form" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="tel" id="login-phone" class="input-3d" placeholder="e.g. 0241234567" required />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="login-password" class="input-3d" placeholder="Enter your password" required />
+        </div>
+        <button type="submit" class="btn-primary-3d" id="login-submit-btn">Access Portfolio</button>
+      </form>
+
+      <!-- REGISTER FORM -->
+      <form id="register-form" style="display:none;" onsubmit="handleRegister(event)">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="reg-name" class="input-3d" placeholder="e.g. Joe Mensah" required />
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="tel" id="reg-phone" class="input-3d" placeholder="e.g. 0241234567" required />
+        </div>
+        <div class="form-group">
+          <label>Create Password</label>
+          <input type="password" id="reg-password" class="input-3d" placeholder="Minimum 4 characters" required />
+        </div>
+        <div class="form-group">
+          <label>Referral / Invitation Code (Optional)</label>
+          <input type="text" id="reg-ref" class="input-3d" placeholder="e.g. TC8X92A1 (Optional)" style="text-transform:uppercase;" />
+        </div>
+        <button type="submit" class="btn-primary-3d btn-emerald" id="reg-submit-btn">Register Account</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================================
+     MAIN USER DASHBOARD (HOME, EARN, GET HIRED, SPIN, MINE)
+========================================================================== -->
+<section id="app-view">
+  <header class="topbar">
+    <div class="tc-logo">
+      <div class="tc-emblem"><span>TC</span></div>
+      <div class="tc-wordmark">TravestCapital <small>TC</small></div>
+    </div>
+
+    <nav class="desktop-nav">
+      <button class="nav-pill active" data-tab="home" onclick="switchTab('home')">Home</button>
+      <button class="nav-pill" data-tab="earn" onclick="switchTab('earn')">Earn</button>
+      <button class="nav-pill" data-tab="hired" onclick="switchTab('hired')">Get Hired</button>
+      <button class="nav-pill" data-tab="spin" onclick="switchTab('spin')">Spin</button>
+      <button class="nav-pill" data-tab="mine" onclick="switchTab('mine')">Mine</button>
+    </nav>
+
+    <button onclick="handleLogout()" style="border:1px solid var(--border); background:#fff; padding:8px 13px; border-radius:10px; font-weight:700; font-size:12.5px; color:var(--danger); cursor:pointer;">Logout</button>
+  </header>
+
+  <main class="container">
+    <!-- ==================== 1. HOME TAB ==================== -->
+    <div id="tab-home" class="tab-section active">
+      <div class="greeting-strip">
+        <div>
+          <div style="font-size:12px; font-weight:700; color:var(--brand-emerald); text-transform:uppercase; letter-spacing:0.6px;">TravestCapital Wealth Terminal</div>
+          <h1 class="greeting-title" id="dynamic-greeting">Good morning, Investor</h1>
+        </div>
+        <div class="vip-pill-badge" id="home-vip-badge">Starter Tier</div>
+      </div>
+
+      <!-- Random Nice Brand Showcase Images with TravestCapital -->
+      <div class="hero-carousel" id="hero-carousel">
+        <div class="hero-slide active" style="background-image:url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80');">
+          <div class="hero-slide-content">
+            <span style="background:rgba(5,150,105,0.9); padding:4px 10px; border-radius:6px; font-size:11px; font-weight:800;">TRAVESTCAPITAL GLOBAL</span>
+            <h3 style="font-family:'Space Grotesk',sans-serif; font-size:20px; margin-top:6px;">Institutional Equity & Daily Dividend Yield</h3>
+            <p style="font-size:12.5px; opacity:0.88;">Automated daily returns backed by diversified commercial portfolios.</p>
+          </div>
+        </div>
+        <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80');">
+          <div class="hero-slide-content">
+            <span style="background:rgba(29,78,216,0.9); padding:4px 10px; border-radius:6px; font-size:11px; font-weight:800;">TRAVESTCAPITAL PAYSTACK VERIFIED</span>
+            <h3 style="font-family:'Space Grotesk',sans-serif; font-size:20px; margin-top:6px;">Instant Deposits & Seamless Mobile Money Payouts</h3>
+            <p style="font-size:12.5px; opacity:0.88;">Full transparency across your Product Wallet and Earnings Wallet.</p>
+          </div>
+        </div>
+        <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1579532537598-459ecdaf39cc?auto=format&fit=crop&w=1200&q=80');">
+          <div class="hero-slide-content">
+            <span style="background:rgba(217,119,6,0.9); padding:4px 10px; border-radius:6px; font-size:11px; font-weight:800;">TRAVESTCAPITAL PARTNER REWARDS</span>
+            <h3 style="font-family:'Space Grotesk',sans-serif; font-size:20px; margin-top:6px;">Earn 10% Referral Bonus + GHS 2,000 VIP 2 Milestone</h3>
+            <p style="font-size:12.5px; opacity:0.88;">Grow your network and unlock complimentary flagship hardware spins.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dual Wallets: Product Wallet & Earnings Wallet -->
+      <div class="wallet-grid">
+        <div class="wallet-card wallet-product">
+          <div class="wallet-label">Product Wallet (Deposited Capital)</div>
+          <div class="wallet-amount" id="product-wallet-val">GHS 0.00</div>
+          <div class="wallet-sub">Available for purchasing VIP share packages</div>
+        </div>
+        <div class="wallet-card wallet-earnings">
+          <div class="wallet-label">Earnings Wallet (Withdrawable Profit)</div>
+          <div class="wallet-amount" id="earnings-wallet-val">GHS 0.00</div>
+          <div class="wallet-sub">Min. withdrawal: <strong id="home-min-w">GHS 500.00</strong></div>
+        </div>
+      </div>
+
+      <!-- Click-to-Open Deposit & Withdrawal Triggers -->
+      <div class="action-row">
+        <button class="action-trigger-btn" onclick="toggleHomeDrawer('deposit-drawer')">
+          <span style="color:var(--brand-blue); font-size:18px;">+</span> Deposit Funds
+        </button>
+        <button class="action-trigger-btn" onclick="toggleHomeDrawer('withdraw-drawer')">
+          <span style="color:var(--brand-emerald); font-size:18px;">↗</span> Withdraw Profit
+        </button>
+      </div>
+
+      <!-- Deposit Form Drawer (Revealed on click) -->
+      <div id="deposit-drawer" class="collapsible-drawer">
+        <div class="panel-header">
+          <div class="panel-title">Deposit to Product Wallet via Paystack</div>
+          <button onclick="toggleHomeDrawer('deposit-drawer')" style="border:none; background:none; font-weight:800; cursor:pointer;">✕</button>
+        </div>
+        <div class="form-group">
+          <label>Deposit Amount (GHS)</label>
+          <input type="number" id="deposit-amount" class="input-3d" placeholder="e.g. 300" min="10" />
+        </div>
+        <button class="btn-primary-3d" onclick="initiatePaystackDeposit()">Proceed to Paystack Payment</button>
+      </div>
+
+      <!-- Withdraw Form Drawer (Revealed on click) -->
+      <div id="withdraw-drawer" class="collapsible-drawer">
+        <div class="panel-header">
+          <div class="panel-title">Withdraw from Earnings Wallet</div>
+          <button onclick="toggleHomeDrawer('withdraw-drawer')" style="border:none; background:none; font-weight:800; cursor:pointer;">✕</button>
+        </div>
+        <p style="font-size:12.5px; color:var(--ink-muted); margin-bottom:12px;">Only funds in your <strong>Earnings Wallet</strong> can be withdrawn. Minimum payout is <strong id="drawer-min-w">GHS 500.00</strong>.</p>
+        <div class="form-group">
+          <label>Amount to Withdraw (GHS)</label>
+          <input type="number" id="withdraw-amount" class="input-3d" placeholder="Enter amount (min 500)" />
+        </div>
+        <div class="form-group">
+          <label>Mobile Money Network</label>
+          <select id="withdraw-network" class="input-3d">
+            <option value="MTN MoMo">MTN Mobile Money</option>
+            <option value="Telecel Cash">Telecel Cash</option>
+            <option value="AT Money">AT Money</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Mobile Money Number</label>
+          <input type="tel" id="withdraw-number" class="input-3d" placeholder="e.g. 024XXXXXXX" />
+        </div>
+        <div class="form-group">
+          <label>Registered Account Name</label>
+          <input type="text" id="withdraw-acc-name" class="input-3d" placeholder="Full Name on MoMo" />
+        </div>
+        <button class="btn-primary-3d btn-emerald" onclick="submitWithdrawal()">Request Mobile Money Payout</button>
+      </div>
+
+      <!-- Latest News from Admin -->
+      <div class="card-panel">
+        <div class="panel-header">
+          <div class="panel-title">Latest TravestCapital Announcements</div>
+          <span style="font-size:11.5px; font-weight:700; color:var(--brand-blue);">LIVE FEED</span>
+        </div>
+        <div id="news-list" style="display:flex; flex-direction:column; gap:10px;"></div>
+      </div>
+
+      <!-- Upward Moving Withdrawal Records -->
+      <div class="card-panel">
+        <div class="panel-header">
+          <div class="panel-title">Withdrawal Records</div>
+          <span style="font-size:11.5px; font-weight:700; color:var(--brand-emerald);">● Live Payout Stream</span>
+        </div>
+        <div class="ticker-viewport">
+          <div class="ticker-track" id="withdrawal-ticker-track"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 2. EARN TAB (BUY SHARES & DAILY CLAIM) ==================== -->
+    <div id="tab-earn" class="tab-section">
+      <div class="card-panel" style="background:linear-gradient(135deg, #0a192f, #1e3a8a); color:#fff;">
+        <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:14px;">
+          <div>
+            <div style="font-size:12px; text-transform:uppercase; letter-spacing:1px; color:#93c5fd; font-weight:700;">Active Shareholding Status</div>
+            <h2 id="earn-active-vip" style="font-family:'Space Grotesk',sans-serif; font-size:24px; margin-top:4px;">No Active VIP Shares</h2>
+            <p id="earn-expiry-text" style="font-size:13px; color:#cbd5e1; margin-top:4px;">Purchase any VIP share tier below to start claiming daily dividends immediately.</p>
+          </div>
+          <div id="daily-claim-box">
+            <button id="claim-daily-btn" class="btn-primary-3d btn-emerald" style="padding:13px 22px;" onclick="claimDailyProfit()" disabled>Claim Daily Profit</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-header">
+        <h2 class="panel-title" style="font-size:20px;">Buy Shares — VIP Equity Packages</h2>
+        <span style="font-size:12.5px; color:var(--ink-muted); font-weight:600;">Pay via Product Wallet or Paystack</span>
+      </div>
+
+      <div class="vip-grid" id="vip-tiers-grid"></div>
+    </div>
+
+    <!-- ==================== 3. GET HIRED TAB ==================== -->
+    <div id="tab-hired" class="tab-section">
+      <div class="card-panel" style="background:linear-gradient(135deg, #064e3b, #047857); color:#fff;">
+        <span style="background:rgba(255,255,255,0.18); padding:4px 10px; border-radius:6px; font-size:11.5px; font-weight:800;">PARTNER RECRUITMENT PROGRAM</span>
+        <h2 style="font-family:'Space Grotesk',sans-serif; font-size:24px; margin-top:10px;">Get 10 users to buy shares in VIP 2 (GHS 600) and receive GHS 2,000 instantly!</h2>
+        <p style="font-size:13.5px; opacity:0.9; margin-top:8px; line-height:1.5;">
+          Generate and share your unique invitation code below. When your invited partners purchase <strong>VIP 2</strong> shares and enter your unique code during checkout, your recruitment counter increases automatically.
+        </p>
+      </div>
+
+      <div class="card-panel">
+        <div class="panel-header">
+          <div class="panel-title">Your Unique Recruitment Code</div>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <input type="text" id="my-invite-code-box" class="input-3d" readonly style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:18px; letter-spacing:1.5px; max-width:240px; text-align:center; background:#eef2ff; color:#1e3a8a;" />
+          <button class="btn-primary-3d" style="width:auto; padding:13px 20px;" onclick="copyInviteCode()">Copy Unique Code</button>
+        </div>
+
+        <div style="margin-top:20px; padding:16px; border-radius:14px; background:var(--surface-soft);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-weight:700; font-size:14px;">VIP 2 Qualified Recruits</span>
+            <span id="vip2-progress-label" style="font-family:'Space Grotesk',sans-serif; font-weight:800; font-size:18px; color:var(--brand-emerald);">0 / 10</span>
+          </div>
+          <div style="height:12px; background:#cbd5e1; border-radius:999px; overflow:hidden;">
+            <div id="vip2-progress-bar" style="height:100%; width:0%; background:linear-gradient(90deg, #059669, #10b981); transition:width 0.4s;"></div>
+          </div>
+
+          <div id="vip2-claim-area" style="margin-top:16px;">
+            <button id="claim-vip2-bonus-btn" class="btn-primary-3d btn-emerald" disabled onclick="claimVip2Bonus()">Reach 10 VIP 2 Users to Claim GHS 2,000</button>
+          </div>
+        </div>
+
+        <div style="margin-top:18px; padding:15px; border-left:4px solid var(--brand-blue); background:#f8fafc; border-radius:8px; font-size:13px; color:var(--ink-muted); line-height:1.6;">
+          <strong>How Instructions Work:</strong><br>
+          1. Copy your unique invitation code above and share it with prospective investors.<br>
+          2. Instruct them to register on TravestCapital and open the <strong>Earn</strong> tab to buy <strong>VIP 2</strong> shares.<br>
+          3. On the VIP 2 checkout screen, they must enter your unique code before completing payment.<br>
+          4. Once 10 users complete VIP 2 with your code, tap <strong>Claim GHS 2,000</strong> to credit your Earnings Wallet immediately.
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 4. SPIN TAB ==================== -->
+    <div id="tab-spin" class="tab-section">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title" style="font-size:20px;">TravestCapital Device Spin Vault</h2>
+          <p style="font-size:13px; color:var(--ink-muted);">Free VIP 2 Prize Spins (once every 24h) & Unlimited Discount Spins for all active investors.</p>
+        </div>
+      </div>
+
+      <div class="device-grid" id="spin-devices-grid"></div>
+
+      <!-- User's Won / Purchased Spin Device Orders -->
+      <div class="card-panel" style="margin-top:20px;">
+        <div class="panel-header">
+          <div class="panel-title">My Spin Prize & Discount Delivery Orders</div>
+        </div>
+        <div id="user-spin-orders-list" style="font-size:13.5px; color:var(--ink-muted);">No device deliveries claimed yet.</div>
+      </div>
+    </div>
+
+    <!-- ==================== 5. MINE TAB (PROFILE & TAP-TO-OPEN SETTINGS) ==================== -->
+    <div id="tab-mine" class="tab-section">
+      <div class="card-panel" style="background:linear-gradient(135deg, #0a192f, #1e293b); color:#fff;">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <div class="tc-emblem" style="width:52px; height:52px;"><span style="font-size:20px;">TC</span></div>
+          <div>
+            <h2 id="mine-user-name" style="font-family:'Space Grotesk',sans-serif; font-size:21px;">User Name</h2>
+            <div style="font-size:13.5px; color:#cbd5e1; margin-top:2px;">Phone: <strong id="mine-user-phone">---</strong></div>
+            <div style="margin-top:6px;">
+              <span id="mine-vip-badge" style="background:#f59e0b; color:#0a192f; padding:3px 10px; border-radius:999px; font-size:11.5px; font-weight:800;">Starter</span>
+              <span style="margin-left:8px; font-size:12px; color:#93c5fd;">Invite Code: <strong id="mine-invite-code">---</strong></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-panel">
+        <div class="panel-title" style="margin-bottom:14px;">Account Security & Management (Tap to Open)</div>
+
+        <!-- Tap 1: Reset Password -->
+        <div class="tap-setting-row" onclick="toggleMineForm('mine-pw-form')">
+          <span>Reset Account Password</span>
+          <span>▾</span>
+        </div>
+        <div id="mine-pw-form" class="collapsible-drawer" style="margin-bottom:12px;">
+          <div class="form-group">
+            <label>Enter Old Password</label>
+            <input type="password" id="mine-old-pw" class="input-3d" placeholder="Current password" />
+          </div>
+          <div class="form-group">
+            <label>Enter New Password</label>
+            <input type="password" id="mine-new-pw" class="input-3d" placeholder="New password" />
+          </div>
+          <button class="btn-primary-3d" onclick="submitResetPassword()">Update Password</button>
+        </div>
+
+        <!-- Tap 2: Change Phone Number -->
+        <div class="tap-setting-row" onclick="toggleMineForm('mine-phone-form')">
+          <span>Change Registered Phone Number</span>
+          <span>▾</span>
+        </div>
+        <div id="mine-phone-form" class="collapsible-drawer" style="margin-bottom:12px;">
+          <div class="form-group">
+            <label>New Phone Number</label>
+            <input type="tel" id="mine-new-phone" class="input-3d" placeholder="e.g. 0551234567" />
+          </div>
+          <div class="form-group">
+            <label>Confirm Current Password</label>
+            <input type="password" id="mine-phone-pw" class="input-3d" placeholder="Enter your password" />
+          </div>
+          <button class="btn-primary-3d" onclick="submitChangePhone()">Save New Phone Number</button>
+        </div>
+
+        <!-- Tap 3: Transaction History -->
+        <div class="tap-setting-row" onclick="toggleMineForm('mine-tx-drawer')">
+          <span>View Wallet & Share Transaction Ledger</span>
+          <span>▾</span>
+        </div>
+        <div id="mine-tx-drawer" class="collapsible-drawer">
+          <div id="user-tx-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Mobile Bottom Navigation -->
+  <nav class="bottom-nav">
+    <button class="bnav-item active" data-tab="home" onclick="switchTab('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Home</span>
+    </button>
+    <button class="bnav-item" data-tab="earn" onclick="switchTab('earn')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      <span>Earn</span>
+    </button>
+    <button class="bnav-item" data-tab="hired" onclick="switchTab('hired')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Get Hired</span>
+    </button>
+    <button class="bnav-item" data-tab="spin" onclick="switchTab('spin')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+      <span>Spin</span>
+    </button>
+    <button class="bnav-item" data-tab="mine" onclick="switchTab('mine')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>Mine</span>
+    </button>
+  </nav>
+
+  <!-- Live Support Chat Button & Instant Drawer -->
+  <button class="chat-fab" onclick="toggleChatDrawer()">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    <span>Support</span>
+  </button>
+
+  <div class="chat-drawer" id="user-chat-drawer">
+    <div class="chat-header">
+      <div>
+        <div style="font-weight:800; font-size:14.5px;">TravestCapital Support Desk</div>
+        <div style="font-size:11px; color:#93c5fd;">● Live Instant Messaging</div>
+      </div>
+      <button onclick="toggleChatDrawer()" style="border:none; background:none; color:#fff; font-size:18px; cursor:pointer;">✕</button>
+    </div>
+    <div class="chat-body" id="user-chat-messages"></div>
+    <form class="chat-footer" onsubmit="sendUserChat(event)">
+      <input type="text" id="user-chat-input" class="input-3d" style="padding:10px 12px;" placeholder="Message Support..." required />
+      <button type="submit" class="btn-primary-3d" style="width:auto; padding:10px 16px;">Send</button>
+    </form>
+  </div>
+</section>
+
+<!-- ==========================================================================
+     MODAL 1: SHARE PURCHASE CHECKOUT MODAL
+========================================================================== -->
+<div class="modal-backdrop" id="buy-share-modal">
+  <div class="modal-box">
+    <div class="panel-header">
+      <div class="panel-title" id="modal-tier-title">Purchase VIP Shares</div>
+      <button onclick="closeModal('buy-share-modal')" style="border:none; background:none; font-size:18px; cursor:pointer;">✕</button>
+    </div>
+    <div style="background:var(--surface-soft); padding:14px; border-radius:14px; margin-bottom:14px;">
+      <div style="font-size:12.5px; color:var(--ink-muted);">Investment Capital Required</div>
+      <div id="modal-tier-price" style="font-family:'Space Grotesk',sans-serif; font-size:26px; font-weight:700; color:var(--brand-navy);">GHS 300.00</div>
+      <div id="modal-tier-profit" style="font-size:13px; color:var(--brand-emerald); font-weight:700; margin-top:2px;">Daily Profit: GHS 50.00 for 15 Days</div>
+    </div>
+
+    <div id="vip2-recruit-field-wrap" class="form-group" style="display:none;">
+      <label>Get Hired Unique Invitation Code (Optional — for VIP 2 Recruiter)</label>
+      <input type="text" id="checkout-vip2-code" class="input-3d" placeholder="Enter partner's TC code if invited" style="text-transform:uppercase;" />
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:10px; margin-top:16px;">
+      <button class="btn-primary-3d btn-emerald" onclick="confirmBuyShare('wallet')">Pay Using Product Wallet Balance</button>
+      <button class="btn-primary-3d" onclick="confirmBuyShare('paystack')">Pay Directly via Paystack</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==========================================================================
+     MODAL 2: SPIN WHEEL & DELIVERY CLAIM MODAL
+========================================================================== -->
+<div class="modal-backdrop" id="spin-wheel-modal">
+  <div class="modal-box" style="text-align:center;">
+    <div class="panel-header">
+      <div class="panel-title" id="wheel-device-title">Spin Wheel</div>
+      <button onclick="closeModal('spin-wheel-modal')" style="border:none; background:none; font-size:18px; cursor:pointer;">✕</button>
+    </div>
+    <p id="wheel-subtitle" style="font-size:13px; color:var(--ink-muted);">Tap Spin Now to test your luck!</p>
+
+    <div class="wheel-stage">
+      <div class="wheel-pointer"></div>
+      <canvas id="wheel-canvas" width="270" height="270"></canvas>
+    </div>
+
+    <button id="trigger-spin-btn" class="btn-primary-3d" onclick="executeWheelSpin()">SPIN NOW</button>
+
+    <!-- Result & Delivery Claim Area -->
+    <div id="spin-outcome-box" style="display:none; margin-top:16px; text-align:left; background:var(--surface-soft); padding:16px; border-radius:16px;">
+      <h3 id="spin-outcome-heading" style="font-family:'Space Grotesk',sans-serif; font-size:18px; margin-bottom:6px;"></h3>
+      <p id="spin-outcome-desc" style="font-size:13px; color:var(--ink-muted); margin-bottom:12px;"></p>
+
+      <div id="spin-delivery-form" style="display:none;">
+        <div class="form-group">
+          <label>Recipient Phone Number</label>
+          <input type="tel" id="spin-claim-phone" class="input-3d" placeholder="e.g. 0241234567" />
+        </div>
+        <div class="form-group">
+          <label>Region</label>
+          <input type="text" id="spin-claim-region" class="input-3d" placeholder="e.g. Ashanti Region" />
+        </div>
+        <div class="form-group">
+          <label>Full Delivery Address / Landmark</label>
+          <input type="text" id="spin-claim-address" class="input-3d" placeholder="House No., Street, City" />
+        </div>
+        <button id="spin-submit-claim-btn" class="btn-primary-3d btn-emerald" onclick="submitSpinClaim()">Submit Delivery Details</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let APP_STATE = null;
+  let SELECTED_TIER = null;
+  let ACTIVE_SPIN_DEVICE = null;
+  let CURRENT_WHEEL_ROTATION = 0;
+  let SPIN_RESULT_DATA = null;
+  let LAST_CHAT_ID = 0;
+  let CHAT_POLL_TIMER = null;
+
+  // 3D Tilt effect on Login Card
+  const authView = document.getElementById('auth-view');
+  const authStage = document.getElementById('auth-stage');
+  authView.addEventListener('mousemove', (e) => {
+    if (window.innerWidth < 768) return;
+    const x = (window.innerWidth / 2 - e.pageX) / 28;
+    const y = (window.innerHeight / 2 - e.pageY) / 28;
+    authStage.style.transform = `rotateY(${-x}deg) rotateX(${y}deg)`;
+  });
+  authView.addEventListener('mouseleave', () => {
+    authStage.style.transform = 'rotateY(0deg) rotateX(0deg)';
+  });
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3600);
+  }
+
+  function switchAuthMode(mode) {
+    document.getElementById('tab-login-btn').classList.toggle('active', mode === 'login');
+    document.getElementById('tab-reg-btn').classList.toggle('active', mode === 'register');
+    document.getElementById('login-form').style.display = mode === 'login' ? 'block' : 'none';
+    document.getElementById('register-form').style.display = mode === 'register' ? 'block' : 'none';
+  }
+
+  async function handleRegister(e) {
+    e.preventDefault();
+    const btn = document.getElementById('reg-submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Creating Account...';
+    try {
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          name: document.getElementById('reg-name').value,
+          phone: document.getElementById('reg-phone').value,
+          password: document.getElementById('reg-password').value,
+          referral_code: document.getElementById('reg-ref').value
+        })
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        showToast(data.error || 'Registration failed');
+      } else {
+        showToast(data.message);
+        document.getElementById('login-phone').value = document.getElementById('reg-phone').value;
+        document.getElementById('register-form').reset();
+        switchAuthMode('login');
+      }
+    } catch (err) {
+      showToast('Network error. Please try again.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Register Account';
+    }
+  }
+
+  function playSparkleWelcome(userName) {
+    const overlay = document.getElementById('welcome-sparkle-overlay');
+    const field = document.getElementById('sparkle-field');
+    document.getElementById('sparkle-welcome-text').textContent = `Welcome, ${userName}!`;
+    field.innerHTML = '';
+    for (let i = 0; i < 36; i++) {
+      const star = document.createElement('div');
+      star.className = 'sparkle-star';
+      star.style.left = Math.random() * 100 + '%';
+      star.style.top = Math.random() * 100 + '%';
+      star.style.animationDelay = (Math.random() * 1.4) + 's';
+      star.style.width = star.style.height = (6 + Math.random() * 9) + 'px';
+      field.appendChild(star);
+    }
+    overlay.style.display = 'flex';
+    setTimeout(() => {
+      overlay.style.display = 'none';
+    }, 3000);
+  }
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    const btn = document.getElementById('login-submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Authenticating...';
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          phone: document.getElementById('login-phone').value,
+          password: document.getElementById('login-password').value
+        })
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        showToast(data.error || 'Login failed');
+      } else {
+        await loadUserState();
+        document.getElementById('auth-view').style.display = 'none';
+        document.getElementById('app-view').style.display = 'block';
+        playSparkleWelcome(data.user_name);
+        startChatPolling();
+      }
+    } catch (err) {
+      showToast('Connection error.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Access Portfolio';
+    }
+  }
+
+  async function handleLogout() {
+    await fetch('/api/logout', { method: 'POST' });
+    if (CHAT_POLL_TIMER) clearInterval(CHAT_POLL_TIMER);
+    document.getElementById('app-view').style.display = 'none';
+    document.getElementById('auth-view').style.display = 'flex';
+    showToast('Signed out safely.');
+  }
+
+  function getTimeGreeting(name) {
+    const hr = new Date().getHours();
+    if (hr < 12) return `Good morning, ${name}`;
+    if (hr < 18) return `Good afternoon, ${name}`;
+    return `Good evening, ${name}`;
+  }
+
+  async function loadUserState() {
+    const res = await fetch('/api/user/state');
+    if (res.status === 401 || res.status === 403) {
+      document.getElementById('auth-view').style.display = 'flex';
+      document.getElementById('app-view').style.display = 'none';
+      return false;
+    }
+    const data = await res.json();
+    if (!data.ok) return false;
+    APP_STATE = data;
+    renderAllViews();
+    return true;
+  }
+
+  function renderAllViews() {
+    const u = APP_STATE.user;
+    document.getElementById('dynamic-greeting').textContent = getTimeGreeting(u.name);
+    document.getElementById('home-vip-badge').textContent = u.vip_level_name;
+    document.getElementById('product-wallet-val').textContent = `GHS ${u.product_wallet.toLocaleString('en-US', {minimumFractionDigits:2})}`;
+    document.getElementById('earnings-wallet-val').textContent = `GHS ${u.earnings_wallet.toLocaleString('en-US', {minimumFractionDigits:2})}`;
+    document.getElementById('home-min-w').textContent = `GHS ${APP_STATE.min_withdrawal.toLocaleString('en-US', {minimumFractionDigits:2})}`;
+    document.getElementById('drawer-min-w').textContent = `GHS ${APP_STATE.min_withdrawal.toLocaleString('en-US', {minimumFractionDigits:2})}`;
+    document.getElementById('withdraw-number').value = u.phone;
+    document.getElementById('withdraw-acc-name').value = u.name;
+
+    // Announcements
+    const newsBox = document.getElementById('news-list');
+    newsBox.innerHTML = APP_STATE.news.map(n => `
+      <div style="padding:12px 14px; background:var(--surface-soft); border-radius:12px; border-left:4px solid var(--brand-blue);">
+        <div style="font-weight:700; font-size:14px; color:var(--brand-navy);">${escapeHtml(n.title)}</div>
+        <div style="font-size:13px; color:var(--ink-muted); margin-top:4px; line-height:1.45;">${escapeHtml(n.body)}</div>
+      </div>
+    `).join('');
+
+    // Earn Tab Status
+    const claimBtn = document.getElementById('claim-daily-btn');
+    if (APP_STATE.active_tier) {
+      const expDate = new Date(u.vip_expires_at * 1000).toLocaleDateString();
+      document.getElementById('earn-active-vip').textContent = `${APP_STATE.active_tier.name} — GHS ${APP_STATE.active_tier.daily_profit}/day`;
+      document.getElementById('earn-expiry-text').textContent = `Contract valid until ${expDate}. Renew after ${APP_STATE.active_tier.duration_days} days to continue daily claims.`;
+      if (APP_STATE.can_claim_daily) {
+        claimBtn.disabled = false;
+        claimBtn.textContent = `Claim GHS ${APP_STATE.active_tier.daily_profit} Now`;
+      } else {
+        claimBtn.disabled = true;
+        const hrs = Math.floor(APP_STATE.next_claim_in / 3600);
+        const mins = Math.floor((APP_STATE.next_claim_in % 3600) / 60);
+        claimBtn.textContent = `Next Claim in ${hrs}h ${mins}m`;
+      }
+    } else {
+      document.getElementById('earn-active-vip').textContent = 'No Active VIP Shares';
+      claimBtn.disabled = true;
+      claimBtn.textContent = 'Buy Shares to Unlock Claim';
+    }
+
+    // VIP Tiers Grid
+    const grid = document.getElementById('vip-tiers-grid');
+    grid.innerHTML = APP_STATE.tiers.map(t => {
+      const isCurrent = u.vip_level_id === t.id && u.vip_expires_at > APP_STATE.server_time;
+      const totalReturn = (t.daily_profit * t.duration_days).toLocaleString();
+      return `
+        <div class="vip-card ${isCurrent ? 'active-tier' : ''}">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-weight:800; font-size:16px; color:var(--brand-navy);">${escapeHtml(t.name)}</span>
+            ${isCurrent ? '<span style="background:#059669; color:#fff; padding:3px 9px; border-radius:999px; font-size:11px; font-weight:800;">ACTIVE</span>' : ''}
+          </div>
+          <div class="vip-price-tag">GHS ${t.price.toLocaleString()}</div>
+          <div class="vip-metrics">
+            <div><span style="color:var(--ink-muted);">Daily Profit</span><br><strong style="color:var(--brand-emerald);">GHS ${t.daily_profit.toLocaleString()}</strong></div>
+            <div><span style="color:var(--ink-muted);">Cycle (${t.duration_days} Days)</span><br><strong>GHS ${totalReturn} Total</strong></div>
+          </div>
+          <button class="btn-primary-3d ${isCurrent ? 'btn-emerald' : ''}" onclick='openBuyShareModal(${JSON.stringify(t)})'>
+            ${isCurrent ? 'Extend / Re-Subscribe Shares' : 'Buy ' + escapeHtml(t.name) + ' Shares'}
+          </button>
+        </div>
+      `;
+    }).join('');
+
+    // Get Hired Tab
+    document.getElementById('my-invite-code-box').value = u.invite_code;
+    const count = Math.min(10, u.vip2_invites_count);
+    document.getElementById('vip2-progress-label').textContent = `${u.vip2_invites_count} / 10`;
+    document.getElementById('vip2-progress-bar').style.width = `${(count / 10) * 100}%`;
+    const vip2Btn = document.getElementById('claim-vip2-bonus-btn');
+    if (u.vip2_bonus_claimed === 1) {
+      vip2Btn.disabled = true;
+      vip2Btn.textContent = 'GHS 2,000 Milestone Bonus Claimed ✓';
+    } else if (u.vip2_invites_count >= 10) {
+      vip2Btn.disabled = false;
+      vip2Btn.textContent = 'Claim GHS 2,000.00 Instantly!';
+    } else {
+      vip2Btn.disabled = true;
+      vip2Btn.textContent = `Invite ${10 - u.vip2_invites_count} More VIP 2 Users to Unlock GHS 2,000`;
+    }
+
+    // Spin Vault Devices
+    const devGrid = document.getElementById('spin-devices-grid');
+    devGrid.innerHTML = APP_STATE.devices.map(d => {
+      const isFree = d.spin_type === 'free';
+      const imgSrc = d.image_url || 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=800&q=80';
+      return `
+        <div class="device-card">
+          <div class="device-img-wrap">
+            <img src="${imgSrc}" alt="${escapeHtml(d.name)}" />
+            <span class="device-badge ${isFree ? 'badge-free' : 'badge-sale'}">
+              ${isFree ? 'VIP 2 EXCLUSIVE • FREE SPIN' : 'DISCOUNT SPIN • ALL USERS'}
+            </span>
+          </div>
+          <div style="padding:18px; flex:1; display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+              <h3 style="font-family:'Space Grotesk',sans-serif; font-size:18px; color:var(--brand-navy);">${escapeHtml(d.name)}</h3>
+              <p style="font-size:13px; color:var(--ink-muted); margin-top:4px;">${escapeHtml(d.specs)}</p>
+              ${!isFree ? `<div style="margin-top:8px; font-size:13px; font-weight:700; color:var(--brand-blue);">Retail Value: <span style="text-decoration:line-through; color:var(--ink-light);">GHS ${d.original_price.toLocaleString()}</span> → Spin for Discount!</div>` : '<div style="margin-top:8px; font-size:12.5px; font-weight:700; color:#b45309;">Only active VIP 2 shareholders can spin for free</div>'}
+            </div>
+            <button class="btn-primary-3d" style="margin-top:14px;" onclick='openSpinModal(${JSON.stringify(d)})'>
+              Spin Wheel Now
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // User Spin Orders
+    const ordersBox = document.getElementById('user-spin-orders-list');
+    if (APP_STATE.spin_orders.length === 0) {
+      ordersBox.innerHTML = 'No device deliveries claimed yet.';
+    } else {
+      ordersBox.innerHTML = APP_STATE.spin_orders.map(o => `
+        <div style="padding:12px; border:1px solid var(--border); border-radius:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <strong>${escapeHtml(o.device_name)}</strong> (${o.spin_type === 'free' ? 'Free Prize' : 'Discounted: GHS ' + o.amount_paid})<br>
+            <span style="font-size:12px; color:var(--ink-muted);">${escapeHtml(o.region)} • ${escapeHtml(o.address)}</span>
+          </div>
+          <span style="background:#dbeafe; color:#1e40af; padding:4px 10px; border-radius:999px; font-size:11.5px; font-weight:800;">${escapeHtml(o.status)}</span>
+        </div>
+      `).join('');
+    }
+
+    // Mine Tab
+    document.getElementById('mine-user-name').textContent = u.name;
+    document.getElementById('mine-user-phone').textContent = u.phone;
+    document.getElementById('mine-vip-badge').textContent = u.vip_level_name;
+    document.getElementById('mine-invite-code').textContent = u.invite_code;
+
+    const txBox = document.getElementById('user-tx-list');
+    txBox.innerHTML = APP_STATE.transactions.length ? APP_STATE.transactions.map(tx => {
+      const statusBadge = tx.tx_type === 'withdrawal'
+        ? `<span style="display:inline-block; margin-left:6px; padding:2px 7px; border-radius:6px; font-size:10.5px; font-weight:700; background:${tx.status === 'Paid' ? 'rgba(5,150,105,0.14)' : tx.status === 'Refunded' ? 'rgba(220,38,38,0.12)' : 'rgba(217,119,6,0.15)'}; color:${tx.status === 'Paid' ? '#059669' : tx.status === 'Refunded' ? '#dc2626' : '#d97706'};">${escapeHtml(tx.status || 'Pending Payout')}</span>`
+        : '';
+      return `
+      <div style="padding:10px 12px; background:var(--surface-soft); border-radius:10px; display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:13px;">
+        <div>
+          <strong>${escapeHtml(tx.details || tx.tx_type)}</strong>${statusBadge}<br>
+          <span style="font-size:11.5px; color:var(--ink-muted);">${new Date(tx.created_at * 1000).toLocaleString()}</span>
+        </div>
+        <div style="font-weight:800; white-space:nowrap; color:${tx.tx_type === 'withdrawal' ? 'var(--danger)' : 'var(--brand-emerald)'};">
+          ${tx.tx_type === 'withdrawal' ? '-' : '+'}GHS ${tx.amount.toLocaleString()}
+        </div>
+      </div>
+    `}).join('') : '<div style="font-size:13px; color:var(--ink-muted);">No transactions recorded yet.</div>';
+  }
+
+  // Upward-scrolling masked withdrawal records generator
+  function initWithdrawalTicker() {
+    const samples = [
+      { phone: '024****819', amount: 'GHS 1,250.00', day: 'Today' },
+      { phone: '055****304', amount: 'GHS 640.00', day: 'Today' },
+      { phone: '020****992', amount: 'GHS 2,000.00', day: 'Today' },
+      { phone: '054****118', amount: 'GHS 850.00', day: 'Today' },
+      { phone: '027****450', amount: 'GHS 1,500.00', day: 'Yesterday' },
+      { phone: '059****773', amount: 'GHS 520.00', day: 'Yesterday' },
+      { phone: '026****612', amount: 'GHS 3,100.00', day: 'Yesterday' },
+      { phone: '050****289', amount: 'GHS 980.00', day: 'Yesterday' }
+    ];
+    const doubled = [...samples, ...samples];
+    document.getElementById('withdrawal-ticker-track').innerHTML = doubled.map(s => `
+      <div class="ticker-row">
+        <div><strong>${s.phone}</strong> <span style="color:var(--ink-muted); font-size:12px;">• ${s.day}</span></div>
+        <div style="font-weight:800; color:var(--brand-emerald);">Withdrew ${s.amount}</div>
+      </div>
+    `).join('');
+  }
+
+  // Hero Carousel rotation
+  let slideIdx = 0;
+  setInterval(() => {
+    const slides = document.querySelectorAll('.hero-slide');
+    if (!slides.length) return;
+    slides[slideIdx].classList.remove('active');
+    slideIdx = (slideIdx + 1) % slides.length;
+    slides[slideIdx].classList.add('active');
+  }, 4500);
+
+  function switchTab(tabName) {
+    document.querySelectorAll('.tab-section').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + tabName).classList.add('active');
+    document.querySelectorAll('.nav-pill, .bnav-item').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.tab === tabName);
+    });
+  }
+
+  function toggleHomeDrawer(id) {
+    const target = document.getElementById(id);
+    const wasOpen = target.classList.contains('open');
+    document.getElementById('deposit-drawer').classList.remove('open');
+    document.getElementById('withdraw-drawer').classList.remove('open');
+    if (!wasOpen) target.classList.add('open');
+  }
+
+  function toggleMineForm(id) {
+    document.getElementById(id).classList.toggle('open');
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+
+  // Paystack Helper
+  function launchPaystack(amountGhs, email, onSuccessCallback) {
+    const pk = APP_STATE.paystack_public_key;
+    if (!pk || pk.includes('your_paystack_public_key')) {
+      // Simulated Paystack confirmation if Admin hasn't pasted Live Key yet
+      const ref = 'TC_PSK_' + Date.now() + '_' + Math.floor(Math.random() * 9999);
+      showToast('Paystack Live Key not set in Admin yet — processing test checkout...');
+      setTimeout(() => onSuccessCallback(ref), 900);
+      return;
+    }
+    const handler = PaystackPop.setup({
+      key: pk,
+      email: email,
+      amount: Math.round(amountGhs * 100),
+      currency: 'GHS',
+      ref: 'TC_' + Date.now() + '_' + Math.floor(Math.random() * 100000),
+      callback: function(response) {
+        onSuccessCallback(response.reference);
+      },
+      onClose: function() {
+        showToast('Paystack checkout closed.');
+      }
+    });
+    handler.openIframe();
+  }
+
+  function initiatePaystackDeposit() {
+    const amt = parseFloat(document.getElementById('deposit-amount').value);
+    if (!amt || amt <= 0) {
+      showToast('Enter a valid deposit amount in GHS.');
+      return;
+    }
+    const userEmail = `${APP_STATE.user.phone}@travestcapital.com`;
+    launchPaystack(amt, userEmail, async (ref) => {
+      const res = await fetch('/api/user/deposit', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ amount: amt, reference: ref })
+      });
+      const data = await res.json();
+      showToast(data.message || data.error);
+      if (data.ok) {
+        document.getElementById('deposit-amount').value = '';
+        toggleHomeDrawer('deposit-drawer');
+        loadUserState();
+      }
+    });
+  }
+
+  async function submitWithdrawal() {
+    const amount = parseFloat(document.getElementById('withdraw-amount').value);
+    const network = document.getElementById('withdraw-network').value;
+    const account_number = document.getElementById('withdraw-number').value;
+    const account_name = document.getElementById('withdraw-acc-name').value;
+    const res = await fetch('/api/user/withdraw', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ amount, network, account_number, account_name })
+    });
+    const data = await res.json();
+    showToast(data.message || data.error);
+    if (data.ok) {
+      toggleHomeDrawer('withdraw-drawer');
+      loadUserState();
+    }
+  }
+
+  // Buy Shares
+  function openBuyShareModal(tier) {
+    SELECTED_TIER = tier;
+    document.getElementById('modal-tier-title').textContent = `Subscribe to ${tier.name}`;
+    document.getElementById('modal-tier-price').textContent = `GHS ${tier.price.toLocaleString('en-US', {minimumFractionDigits:2})}`;
+    document.getElementById('modal-tier-profit').textContent = `Daily Profit: GHS ${tier.daily_profit.toLocaleString()} for ${tier.duration_days} Days`;
+    const isVip2 = tier.is_vip2_target === 1 || tier.price >= 600;
+    document.getElementById('vip2-recruit-field-wrap').style.display = isVip2 ? 'block' : 'none';
+    document.getElementById('checkout-vip2-code').value = '';
+    document.getElementById('buy-share-modal').classList.add('open');
+  }
+
+  async function confirmBuyShare(method) {
+    if (!SELECTED_TIER) return;
+    const vip2Code = document.getElementById('checkout-vip2-code').value.trim();
+
+    if (method === 'wallet') {
+      const res = await fetch('/api/user/buy-share', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ tier_id: SELECTED_TIER.id, method: 'wallet', vip2_recruit_code: vip2Code })
+      });
+      const data = await res.json();
+      showToast(data.message || data.error);
+      if (data.ok) {
+        closeModal('buy-share-modal');
+        loadUserState();
+      }
+    } else {
+      const userEmail = `${APP_STATE.user.phone}@travestcapital.com`;
+      launchPaystack(SELECTED_TIER.price, userEmail, async (ref) => {
+        const res = await fetch('/api/user/buy-share', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ tier_id: SELECTED_TIER.id, method: 'paystack', reference: ref, vip2_recruit_code: vip2Code })
+        });
+        const data = await res.json();
+        showToast(data.message || data.error);
+        if (data.ok) {
+          closeModal('buy-share-modal');
+          loadUserState();
+        }
+      });
+    }
+  }
+
+  async function claimDailyProfit() {
+    const res = await fetch('/api/user/claim-daily', { method: 'POST' });
+    const data = await res.json();
+    showToast(data.message || data.error);
+    if (data.ok) loadUserState();
+  }
+
+  function copyInviteCode() {
+    const box = document.getElementById('my-invite-code-box');
+    box.select();
+    navigator.clipboard.writeText(box.value);
+    showToast('Unique invitation code copied: ' + box.value);
+  }
+
+  async function claimVip2Bonus() {
+    const res = await fetch('/api/user/claim-vip2-bonus', { method: 'POST' });
+    const data = await res.json();
+    showToast(data.message || data.error);
+    if (data.ok) loadUserState();
+  }
+
+  // Spin Wheel Canvas Rendering & Logic
+  function openSpinModal(device) {
+    ACTIVE_SPIN_DEVICE = device;
+    SPIN_RESULT_DATA = null;
+    document.getElementById('wheel-device-title').textContent = device.name;
+    document.getElementById('wheel-subtitle').textContent = device.spin_type === 'free'
+      ? 'VIP 2 Exclusive Free Spin (3 WIN / 3 LOST)'
+      : 'Discount Spin — Win a Massive Discount & Checkout via Paystack';
+    document.getElementById('spin-outcome-box').style.display = 'none';
+    document.getElementById('spin-delivery-form').style.display = 'none';
+    document.getElementById('trigger-spin-btn').disabled = false;
+    document.getElementById('trigger-spin-btn').textContent = 'SPIN NOW';
+
+    const labels = device.spin_type === 'free'
+      ? ['WIN', 'LOST', 'WIN', 'LOST', 'WIN', 'LOST']
+      : (device.discount_options && device.discount_options.length ? device.discount_options.map(v => 'GHS ' + v) : ['GHS 2500', 'GHS 2800', 'GHS 3100', 'GHS 3400', 'GHS 3700', 'GHS 4000']);
+
+    drawWheel(labels, device.spin_type === 'free');
+    document.getElementById('spin-wheel-modal').classList.add('open');
+  }
+
+  function drawWheel(labels, isFree) {
+    const canvas = document.getElementById('wheel-canvas');
+    const ctx = canvas.getContext('2d');
+    const cx = 135, cy = 135, r = 132;
+    const count = labels.length;
+    const arc = (2 * Math.PI) / count;
+    ctx.clearRect(0, 0, 270, 270);
+
+    for (let i = 0; i < count; i++) {
+      const angle = i * arc - Math.PI / 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, angle, angle + arc);
+      ctx.closePath();
+
+      if (isFree) {
+        ctx.fillStyle = (i % 2 === 0) ? '#059669' : '#1e293b';
+      } else {
+        ctx.fillStyle = (i % 2 === 0) ? '#1d4ed8' : '#0a192f';
+      }
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(angle + arc / 2);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 13px Plus Jakarta Sans, sans-serif';
+      ctx.fillText(labels[i], r - 14, 5);
+      ctx.restore();
+    }
+  }
+
+  async function executeWheelSpin() {
+    if (!ACTIVE_SPIN_DEVICE) return;
+    const btn = document.getElementById('trigger-spin-btn');
+    btn.disabled = true;
+    btn.textContent = 'Spinning...';
+
+    const res = await fetch('/api/user/spin', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ device_id: ACTIVE_SPIN_DEVICE.id })
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      showToast(data.error || 'Unable to spin');
+      btn.disabled = false;
+      btn.textContent = 'SPIN NOW';
+      return;
+    }
+
+    SPIN_RESULT_DATA = data;
+    const count = ACTIVE_SPIN_DEVICE.spin_type === 'free' ? 6 : (ACTIVE_SPIN_DEVICE.discount_options.length || 6);
+    const segDeg = 360 / count;
+    const targetOffset = 360 - (data.segment_index * segDeg + segDeg / 2);
+    CURRENT_WHEEL_ROTATION += 1800 + targetOffset - (CURRENT_WHEEL_ROTATION % 360);
+
+    const canvas = document.getElementById('wheel-canvas');
+    canvas.style.transform = `rotate(${CURRENT_WHEEL_ROTATION}deg)`;
+
+    setTimeout(() => {
+      const box = document.getElementById('spin-outcome-box');
+      const head = document.getElementById('spin-outcome-heading');
+      const desc = document.getElementById('spin-outcome-desc');
+      const form = document.getElementById('spin-delivery-form');
+      const subBtn = document.getElementById('spin-submit-claim-btn');
+
+      box.style.display = 'block';
+      document.getElementById('spin-claim-phone').value = APP_STATE.user.phone;
+
+      if (data.spin_type === 'free') {
+        if (data.won) {
+          head.textContent = '🎉 CONGRATULATIONS! YOU WON!';
+          head.style.color = '#059669';
+          desc.textContent = `You won a FREE ${ACTIVE_SPIN_DEVICE.name}! Enter your delivery details below to dispatch your prize.`;
+          form.style.display = 'block';
+          subBtn.textContent = 'Submit Free Prize Delivery Details';
+        } else {
+          head.textContent = 'Result: LOST';
+          head.style.color = '#dc2626';
+          desc.textContent = 'Better luck next time! You can spin again in 24 hours.';
+          form.style.display = 'none';
+        }
+        loadUserState();
+      } else {
+        head.textContent = `🔥 Discount Unlocked: GHS ${data.discounted_price.toLocaleString()}`;
+        head.style.color = '#1d4ed8';
+        desc.textContent = `Complete Paystack payment of GHS ${data.discounted_price.toLocaleString()} and submit your delivery address.`;
+        form.style.display = 'block';
+        subBtn.textContent = `Pay GHS ${data.discounted_price.toLocaleString()} via Paystack & Submit Details`;
+        btn.disabled = false;
+        btn.textContent = 'Spin Again';
+      }
+    }, 4300);
+  }
+
+  async function submitSpinClaim() {
+    const phone = document.getElementById('spin-claim-phone').value.trim();
+    const region = document.getElementById('spin-claim-region').value.trim();
+    const address = document.getElementById('spin-claim-address').value.trim();
+    if (!phone || !region || !address) {
+      showToast('Please enter phone number, region, and delivery address.');
+      return;
+    }
+
+    if (SPIN_RESULT_DATA.spin_type === 'free') {
+      const res = await fetch('/api/user/spin-claim', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          device_id: ACTIVE_SPIN_DEVICE.id,
+          spin_type: 'free',
+          amount_paid: 0,
+          recipient_phone: phone,
+          region,
+          address
+        })
+      });
+      const data = await res.json();
+      showToast(data.message || data.error);
+      if (data.ok) {
+        closeModal('spin-wheel-modal');
+        loadUserState();
+      }
+    } else {
+      const price = SPIN_RESULT_DATA.discounted_price;
+      const email = `${APP_STATE.user.phone}@travestcapital.com`;
+      launchPaystack(price, email, async (ref) => {
+        const res = await fetch('/api/user/spin-claim', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            device_id: ACTIVE_SPIN_DEVICE.id,
+            spin_type: 'sale',
+            amount_paid: price,
+            paystack_ref: ref,
+            recipient_phone: phone,
+            region,
+            address
+          })
+        });
+        const data = await res.json();
+        showToast(data.message || data.error);
+        if (data.ok) {
+          closeModal('spin-wheel-modal');
+          loadUserState();
+        }
+      });
+    }
+  }
+
+  // Mine Tab Actions
+  async function submitResetPassword() {
+    const res = await fetch('/api/user/reset-password', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        old_password: document.getElementById('mine-old-pw').value,
+        new_password: document.getElementById('mine-new-pw').value
+      })
+    });
+    const data = await res.json();
+    showToast(data.message || data.error);
+    if (data.ok) {
+      document.getElementById('mine-old-pw').value = '';
+      document.getElementById('mine-new-pw').value = '';
+      toggleMineForm('mine-pw-form');
+    }
+  }
+
+  async function submitChangePhone() {
+    const res = await fetch('/api/user/change-phone', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        new_phone: document.getElementById('mine-new-phone').value,
+        password: document.getElementById('mine-phone-pw').value
+      })
+    });
+    const data = await res.json();
+    showToast(data.message || data.error);
+    if (data.ok) {
+      document.getElementById('mine-new-phone').value = '';
+      document.getElementById('mine-phone-pw').value = '';
+      toggleMineForm('mine-phone-form');
+      loadUserState();
+    }
+  }
+
+  // Real-Time Instant Live Chat (No page refresh needed)
+  function toggleChatDrawer() {
+    const drawer = document.getElementById('user-chat-drawer');
+    drawer.classList.toggle('open');
+    if (drawer.classList.contains('open')) {
+      fetchNewChatMessages();
+    }
+  }
+
+  async function fetchNewChatMessages() {
+    try {
+      const res = await fetch(`/api/chat/messages?after_id=${LAST_CHAT_ID}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.ok && data.messages.length > 0) {
+        const box = document.getElementById('user-chat-messages');
+        data.messages.forEach(m => {
+          if (m.id > LAST_CHAT_ID) LAST_CHAT_ID = m.id;
+          const div = document.createElement('div');
+          div.className = 'msg-bubble ' + (m.sender === 'user' ? 'msg-user' : 'msg-admin');
+          div.textContent = m.message;
+          box.appendChild(div);
+        });
+        box.scrollTop = box.scrollHeight;
+      }
+    } catch (e) {}
+  }
+
+  async function sendUserChat(e) {
+    e.preventDefault();
+    const inp = document.getElementById('user-chat-input');
+    const msg = inp.value.trim();
+    if (!msg) return;
+    inp.value = '';
+    const res = await fetch('/api/chat/send', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ message: msg })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      fetchNewChatMessages();
+    }
+  }
+
+  function startChatPolling() {
+    LAST_CHAT_ID = 0;
+    document.getElementById('user-chat-messages').innerHTML = '';
+    fetchNewChatMessages();
+    if (CHAT_POLL_TIMER) clearInterval(CHAT_POLL_TIMER);
+    CHAT_POLL_TIMER = setInterval(fetchNewChatMessages, 1500);
+  }
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+  }
+
+  // Boot check
+  (async function init() {
+    initWithdrawalTicker();
+    const loggedIn = await loadUserState();
+    if (loggedIn) {
+      document.getElementById('auth-view').style.display = 'none';
+      document.getElementById('app-view').style.display = 'block';
+      startChatPolling();
+    }
+  })();
+</script>
+</body>
+</html>
