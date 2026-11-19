@@ -5,13 +5,20 @@ import time
 import random
 import string
 import json
-from datetime import datetime, timedelta
+import re
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from flask import Flask, render_template, request, jsonify, session, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import firebase_admin
 from firebase_admin import credentials, firestore
+
+try:
+    from zoneinfo import ZoneInfo
+    GHANA_TZ = ZoneInfo('Africa/Accra')
+except Exception:
+    GHANA_TZ = timezone.utc
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 app.secret_key = os.environ.get('SECRET_KEY', 'travest_capital_prod_secret_key_2026_x99')
@@ -64,11 +71,33 @@ def generate_invite_code():
     return 'TC' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
 
+def normalize_ghana_phone(raw_phone):
+    cleaned = re.sub(r'[\s\-\(\)]', '', (raw_phone or '').strip())
+    match = re.match(r'^(?:0|\+?233)(24|54|55|59|20|50)(\d{7})$', cleaned)
+    if not match:
+        return None
+    return f"0{match.group(1)}{match.group(2)}"
+
+
+def get_ghana_day_info(ts=None):
+    now_ts = int(time.time()) if ts is None else int(ts)
+    dt_ghana = datetime.fromtimestamp(now_ts, tz=GHANA_TZ)
+    day_str = dt_ghana.strftime('%Y-%m-%d')
+    next_midnight = (dt_ghana + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    seconds_until_midnight = max(0, int((next_midnight - dt_ghana).total_seconds()))
+    return day_str, seconds_until_midnight
+
+
 def init_db():
     defaults = {
         'admin_pin': '236963',
         'min_withdrawal': '500',
         'company_name': 'TravestCapital',
+        'about_company_text': 'TravestCapital (TC) is an institutional equity and asset platform focused on transparent share packages, partner recruitment rewards, and device spin opportunities.',
+        'about_company_image': '',
+        'about_company_video': '',
+        'invite_vip2_target': '10',
+        'invite_vip2_reward': '2000',
         'paystack_public_key': PAYSTACK_PUBLIC_KEY,
         'paystack_secret_key': PAYSTACK_SECRET_KEY
     }
@@ -194,12 +223,15 @@ def serve_upload(filename):
 def api_register():
     data = request.get_json(force=True)
     name = (data.get('name') or '').strip()
-    phone = (data.get('phone') or '').strip()
+    raw_phone = (data.get('phone') or '').strip()
+    phone = normalize_ghana_phone(raw_phone)
     password = (data.get('password') or '').strip()
     referral_code = (data.get('referral_code') or '').strip().upper()
 
-    if not name or not phone or not password:
+    if not name or not raw_phone or not password:
         return jsonify({'ok': False, 'error': 'Full name, phone number, and password are required.'}), 400
+    if not phone:
+        return jsonify({'ok': False, 'error': 'Enter a valid Ghana MTN (024, 054, 055, 059) or Telecel (020, 050) phone number.'}), 400
     if len(password) < 4:
         return jsonify({'ok': False, 'error': 'Password must be at least 4 characters.'}), 400
 
@@ -236,9 +268,11 @@ def api_register():
         'vip_level_name': 'Starter',
         'vip_expires_at': 0,
         'last_claim_at': 0,
+        'last_claim_day': '',
         'vip2_invites_count': 0,
         'vip2_bonus_claimed': 0,
         'last_free_spin_at': 0,
+        'last_free_spin_day': '',
         'is_active': 1,
         'created_at': now
     }
@@ -249,13 +283,16 @@ def api_register():
 @app.route('/api/login', methods=['POST'])
 def api_login():
     data = request.get_json(force=True)
-    phone = (data.get('phone') or '').strip()
+    raw_phone = (data.get('phone') or '').strip()
+    phone = normalize_ghana_phone(raw_phone) or raw_phone
     password = (data.get('password') or '').strip()
 
     if not phone or not password:
         return jsonify({'ok': False, 'error': 'Enter your phone number and password.'}), 400
 
     docs = list(db.collection('users').where('phone', '==', phone).limit(1).get())
+    if not docs and raw_phone != phone:
+        docs = list(db.collection('users').where('phone', '==', raw_phone).limit(1).get())
     if not docs:
         return jsonify({'ok': False, 'error': 'Invalid phone number or password.'}), 401
 
@@ -283,6 +320,7 @@ def api_logout():
 @login_required
 def api_user_state(user):
     now = int(time.time())
+    today_str, seconds_to_midnight = get_ghana_day_info(now)
     user_ref = db.collection('users').document(str(user['id']))
 
     # Check if VIP expired
@@ -322,21 +360,27 @@ def api_user_state(user):
     can_claim_daily = False
     next_claim_in = 0
     active_tier = None
+    last_claim_day = user.get('last_claim_day') or ''
+    if not last_claim_day and (user.get('last_claim_at') or 0) > 0:
+        last_claim_day, _ = get_ghana_day_info(user.get('last_claim_at'))
+
     if user['vip_level_id'] > 0 and user['vip_expires_at'] > now:
         for t in tiers:
             if t['id'] == user['vip_level_id']:
                 active_tier = t
                 break
         if active_tier:
-            elapsed = now - (user.get('last_claim_at') or 0)
-            if elapsed >= 86400:
+            if last_claim_day != today_str:
                 can_claim_daily = True
             else:
-                next_claim_in = 86400 - elapsed
+                next_claim_in = seconds_to_midnight
 
-    free_spin_elapsed = now - (user.get('last_free_spin_at') or 0)
-    can_free_spin_today = free_spin_elapsed >= 86400
-    free_spin_wait = max(0, 86400 - free_spin_elapsed)
+    last_free_spin_day = user.get('last_free_spin_day') or ''
+    if not last_free_spin_day and (user.get('last_free_spin_at') or 0) > 0:
+        last_free_spin_day, _ = get_ghana_day_info(user.get('last_free_spin_at'))
+
+    can_free_spin_today = last_free_spin_day != today_str
+    free_spin_wait = 0 if can_free_spin_today else seconds_to_midnight
 
     has_vip2 = False
     if active_tier and (active_tier.get('is_vip2_target') == 1 or active_tier.get('price', 0) >= 600):
@@ -344,12 +388,23 @@ def api_user_state(user):
 
     min_withdrawal = float(get_setting('min_withdrawal', '500'))
     paystack_pk = get_setting('paystack_public_key', PAYSTACK_PUBLIC_KEY)
+    invite_target = int(float(get_setting('invite_vip2_target', '10')))
+    invite_reward = float(get_setting('invite_vip2_reward', '2000'))
+    about_company = {
+        'company_name': get_setting('company_name', 'TravestCapital'),
+        'text': get_setting('about_company_text', ''),
+        'image_url': get_setting('about_company_image', ''),
+        'video_url': get_setting('about_company_video', '')
+    }
 
     return jsonify({
         'ok': True,
         'server_time': now,
         'paystack_public_key': paystack_pk,
         'min_withdrawal': min_withdrawal,
+        'invite_vip2_target': invite_target,
+        'invite_vip2_reward': invite_reward,
+        'about_company': about_company,
         'user': {
             'id': user['id'],
             'name': user['name'],
@@ -422,7 +477,8 @@ def process_share_activation(user_row, tier_row, pay_source, reference=''):
         'vip_level_id': tier_row['id'],
         'vip_level_name': tier_row['name'],
         'vip_expires_at': expires_at,
-        'last_claim_at': 0
+        'last_claim_at': 0,
+        'last_claim_day': ''
     })
 
     tx_id = get_next_sequence_id('transactions')
@@ -525,6 +581,8 @@ def api_buy_share(user):
 @login_required
 def api_claim_daily(user):
     now = int(time.time())
+    today_str, seconds_to_midnight = get_ghana_day_info(now)
+
     if user['vip_level_id'] <= 0 or user['vip_expires_at'] <= now:
         return jsonify({'ok': False, 'error': 'No active VIP share package. Please purchase shares first.'}), 400
 
@@ -533,18 +591,21 @@ def api_claim_daily(user):
         return jsonify({'ok': False, 'error': 'VIP tier not found.'}), 404
 
     tier = tier_doc.to_dict()
-    elapsed = now - (user.get('last_claim_at') or 0)
-    if elapsed < 86400:
-        rem = 86400 - elapsed
-        hrs = rem // 3600
-        mins = (rem % 3600) // 60
-        return jsonify({'ok': False, 'error': f'Next dividend unlocks in {hrs}h {mins}m.'}), 400
+    last_claim_day = user.get('last_claim_day') or ''
+    if not last_claim_day and (user.get('last_claim_at') or 0) > 0:
+        last_claim_day, _ = get_ghana_day_info(user.get('last_claim_at'))
+
+    if last_claim_day == today_str:
+        hrs = seconds_to_midnight // 3600
+        mins = (seconds_to_midnight % 3600) // 60
+        return jsonify({'ok': False, 'error': f'Daily profit already claimed today. Resets at 00:00 ({hrs}h {mins}m left).'}), 400
 
     profit = float(tier['daily_profit'])
     user_ref = db.collection('users').document(str(user['id']))
     user_ref.update({
         'earnings_wallet': user.get('earnings_wallet', 0.0) + profit,
-        'last_claim_at': now
+        'last_claim_at': now,
+        'last_claim_day': today_str
     })
 
     tx_id = get_next_sequence_id('transactions')
@@ -566,15 +627,19 @@ def api_claim_daily(user):
 @app.route('/api/user/claim-vip2-bonus', methods=['POST'])
 @login_required
 def api_claim_vip2_bonus(user):
-    if user.get('vip2_invites_count', 0) < 10:
-        return jsonify({'ok': False, 'error': f'You need 10 VIP 2 recruits (currently {user.get("vip2_invites_count", 0)}/10).'}), 400
+    target = int(float(get_setting('invite_vip2_target', '10')))
+    reward = float(get_setting('invite_vip2_reward', '2000'))
+    current_invites = user.get('vip2_invites_count', 0)
+
+    if current_invites < target:
+        return jsonify({'ok': False, 'error': f'You need {target} VIP 2 recruits (currently {current_invites}/{target}).'}), 400
     if user.get('vip2_bonus_claimed', 0) == 1:
-        return jsonify({'ok': False, 'error': 'You have already claimed your GHS 2,000 recruitment milestone bonus.'}), 400
+        return jsonify({'ok': False, 'error': f'You have already claimed your GHS {reward:,.2f} recruitment milestone bonus.'}), 400
 
     now = int(time.time())
     user_ref = db.collection('users').document(str(user['id']))
     user_ref.update({
-        'earnings_wallet': user.get('earnings_wallet', 0.0) + 2000.0,
+        'earnings_wallet': user.get('earnings_wallet', 0.0) + reward,
         'vip2_bonus_claimed': 1
     })
 
@@ -585,13 +650,13 @@ def api_claim_vip2_bonus(user):
         'user_name': user['name'],
         'user_phone': user['phone'],
         'tx_type': 'vip2_bonus',
-        'amount': 2000.0,
+        'amount': reward,
         'reference': 'HIRE-' + uuid.uuid4().hex[:8].upper(),
         'status': 'completed',
-        'details': 'Get Hired 10 VIP2 Milestone Reward',
+        'details': f'Get Hired {target} VIP2 Milestone Reward',
         'created_at': now
     })
-    return jsonify({'ok': True, 'message': 'Congratulations! GHS 2,000.00 added to your Earnings Wallet!'})
+    return jsonify({'ok': True, 'message': f'Congratulations! GHS {reward:,.2f} added to your Earnings Wallet!'})
 
 
 @app.route('/api/user/withdraw', methods=['POST'])
@@ -644,6 +709,7 @@ def api_user_spin(user):
     data = request.get_json(force=True)
     device_id = int(data.get('device_id') or 0)
     now = int(time.time())
+    today_str, seconds_to_midnight = get_ghana_day_info(now)
 
     device_doc = db.collection('spin_devices').document(str(device_id)).get()
     if not device_doc.exists:
@@ -659,12 +725,14 @@ def api_user_spin(user):
         if not is_vip2:
             return jsonify({'ok': False, 'error': 'Free Device Spin is strictly reserved for active VIP 2 shareholders!'}), 403
 
-        elapsed = now - (user.get('last_free_spin_at') or 0)
-        if elapsed < 86400:
-            rem = 86400 - elapsed
-            hrs = rem // 3600
-            mins = (rem % 3600) // 60
-            return jsonify({'ok': False, 'error': f'You have already used your free spin. Try again in {hrs}h {mins}m.'}), 400
+        last_free_spin_day = user.get('last_free_spin_day') or ''
+        if not last_free_spin_day and (user.get('last_free_spin_at') or 0) > 0:
+            last_free_spin_day, _ = get_ghana_day_info(user.get('last_free_spin_at'))
+
+        if last_free_spin_day == today_str:
+            hrs = seconds_to_midnight // 3600
+            mins = (seconds_to_midnight % 3600) // 60
+            return jsonify({'ok': False, 'error': f'You have already used your free spin today. Resets at 00:00 ({hrs}h {mins}m left).'}), 400
 
         if device.get('difficulty') == 'hard':
             is_win = random.random() < 0.05
@@ -672,7 +740,10 @@ def api_user_spin(user):
             is_win = random.choice([True, False])
 
         segment_index = random.choice([0, 2, 4]) if is_win else random.choice([1, 3, 5])
-        db.collection('users').document(str(user['id'])).update({'last_free_spin_at': now})
+        db.collection('users').document(str(user['id'])).update({
+            'last_free_spin_at': now,
+            'last_free_spin_day': today_str
+        })
         return jsonify({
             'ok': True,
             'spin_type': 'free',
@@ -788,11 +859,12 @@ def api_user_reset_password(user):
 @login_required
 def api_user_change_phone(user):
     data = request.get_json(force=True)
-    new_phone = (data.get('new_phone') or '').strip()
+    raw_phone = (data.get('new_phone') or '').strip()
+    new_phone = normalize_ghana_phone(raw_phone)
     password = (data.get('password') or '').strip()
 
-    if not new_phone:
-        return jsonify({'ok': False, 'error': 'Enter a valid new phone number.'}), 400
+    if not raw_phone or not new_phone:
+        return jsonify({'ok': False, 'error': 'Enter a valid Ghana MTN (024, 054, 055, 059) or Telecel (020, 050) phone number.'}), 400
     if not check_password_hash(user['password_hash'], password):
         return jsonify({'ok': False, 'error': 'Password verification failed.'}), 400
 
@@ -928,6 +1000,14 @@ def api_admin_overview():
     min_withdrawal = float(get_setting('min_withdrawal', '500'))
     paystack_pk = get_setting('paystack_public_key', PAYSTACK_PUBLIC_KEY)
     paystack_sk = get_setting('paystack_secret_key', PAYSTACK_SECRET_KEY)
+    invite_target = int(float(get_setting('invite_vip2_target', '10')))
+    invite_reward = float(get_setting('invite_vip2_reward', '2000'))
+    about_company = {
+        'company_name': get_setting('company_name', 'TravestCapital'),
+        'text': get_setting('about_company_text', ''),
+        'image_url': get_setting('about_company_image', ''),
+        'video_url': get_setting('about_company_video', '')
+    }
 
     return jsonify({
         'ok': True,
@@ -942,7 +1022,10 @@ def api_admin_overview():
         'settings': {
             'min_withdrawal': min_withdrawal,
             'paystack_public_key': paystack_pk,
-            'paystack_secret_key': paystack_sk
+            'paystack_secret_key': paystack_sk,
+            'invite_vip2_target': invite_target,
+            'invite_vip2_reward': invite_reward,
+            'about_company': about_company
         },
         'users': users,
         'tiers': tiers,
@@ -1223,6 +1306,22 @@ def api_admin_settings_save():
         db.collection('settings').document('paystack_public_key').set({'value': str(data['paystack_public_key']).strip()})
     if 'paystack_secret_key' in data and str(data['paystack_secret_key']).strip():
         db.collection('settings').document('paystack_secret_key').set({'value': str(data['paystack_secret_key']).strip()})
+    if 'invite_vip2_target' in data and str(data['invite_vip2_target']).strip():
+        t_val = int(float(data['invite_vip2_target']))
+        if t_val < 1:
+            return jsonify({'ok': False, 'error': 'Required invite count must be at least 1.'}), 400
+        db.collection('settings').document('invite_vip2_target').set({'value': str(t_val)})
+    if 'invite_vip2_reward' in data and str(data['invite_vip2_reward']).strip():
+        r_val = float(data['invite_vip2_reward'])
+        if r_val < 0:
+            return jsonify({'ok': False, 'error': 'Invite reward amount cannot be negative.'}), 400
+        db.collection('settings').document('invite_vip2_reward').set({'value': str(r_val)})
+    if 'about_company_text' in data:
+        db.collection('settings').document('about_company_text').set({'value': str(data.get('about_company_text') or '').strip()})
+    if 'about_company_image' in data:
+        db.collection('settings').document('about_company_image').set({'value': str(data.get('about_company_image') or '').strip()})
+    if 'about_company_video' in data:
+        db.collection('settings').document('about_company_video').set({'value': str(data.get('about_company_video') or '').strip()})
     if 'new_admin_pin' in data and str(data['new_admin_pin']).strip():
         pin = str(data['new_admin_pin']).strip()
         if len(pin) != 6 or not pin.isdigit():
