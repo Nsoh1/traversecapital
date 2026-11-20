@@ -307,7 +307,7 @@
       <button class="side-link" onclick="showSec('sec-spin', this)">Spin Devices & Orders</button>
       <button class="side-link" onclick="showSec('sec-chat', this)">Live Support Chat <span id="unread-badge" style="background:#dc2626; padding:2px 7px; border-radius:999px; font-size:11px; display:none;">0</span></button>
       <button class="side-link" onclick="showSec('sec-news', this)">News & Announcements</button>
-      <button class="side-link" onclick="showSec('sec-about', this)">About Company</button>
+      <button class="side-link" onclick="showSec('sec-about', this)">About Company Content</button>
       <button class="side-link" onclick="showSec('sec-settings', this)">Paystack & System Rules</button>
 
       <div style="margin-top:auto;">
@@ -500,7 +500,7 @@
               <div class="chat-msgs" id="admin-chat-msgs"></div>
               <form onsubmit="sendAdminReply(event)" style="padding:10px; border-top:1px solid var(--border); display:flex; gap:8px;">
                 <input type="text" id="admin-reply-input" class="inp" placeholder="Type instant reply..." required />
-                <button type="submit" id="admin-reply-btn" class="btn">Send Reply</button>
+                <button type="submit" class="btn">Send Reply</button>
               </form>
             </div>
           </div>
@@ -522,26 +522,37 @@
         <div class="panel" id="admin-news-list"></div>
       </section>
 
-      <!-- 6B. ABOUT COMPANY -->
+      <!-- 6B. ABOUT COMPANY MANAGEMENT -->
       <section id="sec-about" class="sec">
         <h1 style="font-family:'Space Grotesk',sans-serif; font-size:24px; margin-bottom:16px;">About Company Content</h1>
         <div class="panel">
-          <div class="panel-title">Edit About Company Information</div>
+          <div class="panel-title">Configure User "About Company" View (Mine Tab)</div>
+          <p style="font-size:13px; color:var(--ink-muted); margin-bottom:14px;">Set the company story/description (prioritized clearly at the top) plus optional image or video media.</p>
           <div class="fg" style="margin-bottom:12px;">
-            <label>About Company Description</label>
-            <textarea id="set-about-text" class="inp" rows="5" placeholder="Write company overview, mission, and details..." oninput="this.dataset.dirty='1'"></textarea>
+            <label>Company Description / Overview Text</label>
+            <textarea id="set-about-text" class="inp" rows="6" placeholder="Write about TravestCapital, mission, operations, and shareholder benefits..." oninput="this.dataset.dirty='1'"></textarea>
           </div>
           <div class="form-row">
             <div class="fg">
-              <label>Optional Image URL</label>
+              <label>Optional Image URL (or Upload Below)</label>
               <input type="text" id="set-about-image" class="inp" placeholder="https://... or /static/uploads/..." oninput="this.dataset.dirty='1'" />
             </div>
             <div class="fg">
-              <label>Optional Video URL (.mp4 or embed link)</label>
-              <input type="text" id="set-about-video" class="inp" placeholder="https://..." oninput="this.dataset.dirty='1'" />
+              <label>Optional Video URL (MP4 / WebM or Upload Below)</label>
+              <input type="text" id="set-about-video" class="inp" placeholder="https://... or /static/uploads/..." oninput="this.dataset.dirty='1'" />
             </div>
           </div>
-          <button class="btn btn-green" onclick="saveAboutCompany()">Save About Company</button>
+          <div class="form-row">
+            <div class="fg">
+              <label>Upload Company Image File (Optional)</label>
+              <input type="file" id="about-image-file" accept="image/*" class="inp" onchange="uploadAboutMedia(this, 'set-about-image')" />
+            </div>
+            <div class="fg">
+              <label>Upload Company Video File (Optional)</label>
+              <input type="file" id="about-video-file" accept="video/mp4,video/webm,video/quicktime" class="inp" onchange="uploadAboutMedia(this, 'set-about-video')" />
+            </div>
+          </div>
+          <button class="btn btn-green" onclick="saveAboutCompany()">Save About Company Content</button>
         </div>
       </section>
 
@@ -550,13 +561,19 @@
         <h1 style="font-family:'Space Grotesk',sans-serif; font-size:24px; margin-bottom:16px;">System Rules & Paystack Live Keys</h1>
         <div class="panel">
           <div class="tap-trigger" onclick="document.getElementById('invite-rule-drawer').classList.toggle('open')">
-            <span>Configure Get Hired Invite Target & Reward</span>
+            <span>Configure Get Hired Invite Milestone & Reward</span>
             <span>▾</span>
           </div>
           <div id="invite-rule-drawer" class="drawer-body">
             <div class="form-row">
-              <div class="fg"><label>Required VIP 2 Invites</label><input type="number" min="1" id="set-invite-target" class="inp" oninput="this.dataset.dirty='1'" /></div>
-              <div class="fg"><label>Milestone Reward Amount (GHS)</label><input type="number" min="0" step="0.01" id="set-invite-reward" class="inp" oninput="this.dataset.dirty='1'" /></div>
+              <div class="fg">
+                <label>Required Invited VIP 2 Users (Default: 10)</label>
+                <input type="number" min="1" id="set-invite-target" class="inp" oninput="this.dataset.dirty='1'" />
+              </div>
+              <div class="fg">
+                <label>Milestone Reward Amount (GHS)</label>
+                <input type="number" min="0" step="0.01" id="set-invite-reward" class="inp" oninput="this.dataset.dirty='1'" />
+              </div>
             </div>
             <button class="btn btn-green" onclick="saveSettings()">Save Invite Milestone Rules</button>
           </div>
@@ -600,7 +617,8 @@
   let ACTIVE_CHAT_UID = null;
   let LAST_ADMIN_MSG_ID = 0;
   let ADMIN_POLL_TIMER = null;
-  let SENDING_ADMIN_CHAT = false;
+  let IS_SENDING_ADMIN_CHAT = false;
+  let IS_POLLING_ADMIN_CHAT = false;
 
   function toast(msg) {
     const t = document.getElementById('toast');
@@ -672,53 +690,6 @@
     document.getElementById('sidebar').classList.remove('open');
   }
 
-  function renderSpinDevicesTable(devices) {
-    const tbody = document.getElementById('admin-devices-table');
-    const existingRows = new Map();
-    tbody.querySelectorAll('tr[data-dev-id]').forEach(tr => {
-      existingRows.set(tr.dataset.devId, tr);
-    });
-
-    const nextIds = devices.map(d => String(d.id));
-    const currentIds = Array.from(existingRows.keys());
-    const structureChanged = nextIds.length !== currentIds.length || nextIds.some((id, idx) => id !== currentIds[idx]);
-
-    if (structureChanged) {
-      tbody.innerHTML = devices.map(d => `
-        <tr data-dev-id="${d.id}">
-          <td><img src="${d.image_url || 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=200&q=60'}" style="width:48px; height:48px; object-fit:cover; border-radius:8px;" /></td>
-          <td><strong>${esc(d.name)}</strong><br><small>${esc(d.specs)}</small></td>
-          <td>${d.spin_type === 'free' ? 'Free Spin (VIP 2)' : 'Sale Spin (Orig: GHS ' + d.original_price + ')'}</td>
-          <td>
-            ${d.spin_type === 'free'
-              ? `<select id="dev-diff-${d.id}" class="inp" style="max-width:140px;" onchange="updateDeviceDifficulty(${d.id}, this.value)">
-                  <option value="random" ${d.difficulty==='random'?'selected':''}>Random</option>
-                  <option value="hard" ${d.difficulty==='hard'?'selected':''}>Hard</option>
-                 </select>`
-              : `<input type="text" id="dev-disc-${d.id}" class="inp" style="max-width:210px;" value="${d.discount_options.join(',')}" oninput="this.dataset.dirty='1'" onchange="updateDeviceDiscounts(${d.id}, ${d.original_price}, this.value)" />`
-            }
-          </td>
-          <td><button class="btn btn-red btn-sm" onclick="deleteDevice(${d.id})">Remove</button></td>
-        </tr>
-      `).join('');
-      return;
-    }
-
-    devices.forEach(d => {
-      if (d.spin_type === 'free') {
-        const sel = document.getElementById(`dev-diff-${d.id}`);
-        if (sel && document.activeElement !== sel) {
-          sel.value = d.difficulty || 'random';
-        }
-      } else {
-        const inp = document.getElementById(`dev-disc-${d.id}`);
-        if (inp && document.activeElement !== inp && !inp.dataset.dirty) {
-          inp.value = (d.discount_options || []).join(',');
-        }
-      }
-    });
-  }
-
   async function loadAdminOverview() {
     const res = await fetch('/api/admin/overview');
     if (res.status === 401) return;
@@ -750,21 +721,19 @@
       skInput.value = data.settings.paystack_secret_key;
     }
     if (document.activeElement !== invTargetInput && !invTargetInput.dataset.dirty) {
-      invTargetInput.value = data.settings.invite_vip2_target;
+      invTargetInput.value = data.settings.invite_target_count ?? 10;
     }
     if (document.activeElement !== invRewardInput && !invRewardInput.dataset.dirty) {
-      invRewardInput.value = data.settings.invite_vip2_reward;
+      invRewardInput.value = data.settings.invite_reward_amount ?? 2000;
     }
-    if (data.settings.about_company) {
-      if (document.activeElement !== aboutTextInput && !aboutTextInput.dataset.dirty) {
-        aboutTextInput.value = data.settings.about_company.text || '';
-      }
-      if (document.activeElement !== aboutImgInput && !aboutImgInput.dataset.dirty) {
-        aboutImgInput.value = data.settings.about_company.image_url || '';
-      }
-      if (document.activeElement !== aboutVidInput && !aboutVidInput.dataset.dirty) {
-        aboutVidInput.value = data.settings.about_company.video_url || '';
-      }
+    if (document.activeElement !== aboutTextInput && !aboutTextInput.dataset.dirty) {
+      aboutTextInput.value = data.settings.about_company_text || '';
+    }
+    if (document.activeElement !== aboutImgInput && !aboutImgInput.dataset.dirty) {
+      aboutImgInput.value = data.settings.about_company_image || '';
+    }
+    if (document.activeElement !== aboutVidInput && !aboutVidInput.dataset.dirty) {
+      aboutVidInput.value = data.settings.about_company_video || '';
     }
 
     // Withdrawals Queue
@@ -826,8 +795,32 @@
       </tr>
     `).join('');
 
-    // Spin devices table (preserves focus & typing)
-    renderSpinDevicesTable(data.devices);
+    // Spin devices table (preserve active/dirty input while typing so cursor & edits are never disrupted)
+    const devTbody = document.getElementById('admin-devices-table');
+    const activeDevInput = document.activeElement && devTbody.contains(document.activeElement) ? document.activeElement : null;
+    const hasDirtyDevInput = !!devTbody.querySelector('input[data-dirty="1"]');
+    if (!activeDevInput && !hasDirtyDevInput) {
+      devTbody.innerHTML = data.devices.map(d => `
+        <tr>
+          <td><img src="${d.image_url || 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=200&q=60'}" style="width:48px; height:48px; object-fit:cover; border-radius:8px;" /></td>
+          <td><strong>${esc(d.name)}</strong><br><small>${esc(d.specs)}</small></td>
+          <td>${d.spin_type === 'free' ? 'Free Spin (VIP 2)' : 'Sale Spin (Orig: GHS ' + d.original_price + ')'}</td>
+          <td>
+            ${d.spin_type === 'free'
+              ? `<select class="inp" style="max-width:140px;" onchange="updateDeviceDifficulty(${d.id}, this.value)">
+                  <option value="random" ${d.difficulty==='random'?'selected':''}>Random</option>
+                  <option value="hard" ${d.difficulty==='hard'?'selected':''}>Hard</option>
+                 </select>`
+              : `<div style="display:flex; gap:6px; align-items:center;">
+                  <input type="text" id="dev-disc-${d.id}" class="inp" style="max-width:210px;" value="${esc(d.discount_options.join(','))}" oninput="this.dataset.dirty='1'" onkeydown="if(event.key==='Enter'){event.preventDefault(); saveDeviceDiscountsBtn(${d.id}, ${d.original_price});}" />
+                  <button type="button" class="btn btn-sm btn-green" onclick="saveDeviceDiscountsBtn(${d.id}, ${d.original_price})">Save</button>
+                 </div>`
+            }
+          </td>
+          <td><button class="btn btn-red btn-sm" onclick="deleteDevice(${d.id})">Remove</button></td>
+        </tr>
+      `).join('');
+    }
 
     // Spin Orders
     document.getElementById('admin-orders-table').innerHTML = data.spin_orders.map(o => `
@@ -977,16 +970,21 @@
     toast('Spin difficulty updated to ' + difficulty.toUpperCase());
   }
 
+  async function saveDeviceDiscountsBtn(id, orig) {
+    const inp = document.getElementById(`dev-disc-${id}`);
+    if (!inp) return;
+    await updateDeviceDiscounts(id, orig, inp.value);
+    delete inp.dataset.dirty;
+    loadAdminOverview();
+  }
+
   async function updateDeviceDiscounts(id, orig, csv) {
     const arr = csv.split(',').map(x => parseFloat(x.trim())).filter(n => !isNaN(n));
-    const inp = document.getElementById(`dev-disc-${id}`);
     await fetch('/api/admin/devices/update', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ id, spin_type: 'sale', difficulty: 'random', original_price: orig, discount_options: arr })
     });
-    if (inp) delete inp.dataset.dirty;
     toast('Discount wheel values updated.');
-    loadAdminOverview();
   }
 
   async function deleteDevice(id) {
@@ -1020,6 +1018,23 @@
     loadAdminOverview();
   }
 
+  async function uploadAboutMedia(fileInput, targetInputId) {
+    if (!fileInput.files || !fileInput.files[0]) return;
+    const fd = new FormData();
+    fd.append('media', fileInput.files[0]);
+    toast('Uploading media...');
+    const res = await fetch('/api/admin/about/upload-media', { method: 'POST', body: fd });
+    const d = await res.json();
+    if (d.ok) {
+      const target = document.getElementById(targetInputId);
+      target.value = d.url;
+      target.dataset.dirty = '1';
+      toast('Media uploaded! Click "Save About Company Content" to publish.');
+    } else {
+      toast(d.error || 'Upload failed.');
+    }
+  }
+
   async function saveAboutCompany() {
     const res = await fetch('/api/admin/settings/save', {
       method: 'POST', headers: {'Content-Type':'application/json'},
@@ -1046,8 +1061,8 @@
         min_withdrawal: document.getElementById('set-min-w').value,
         paystack_public_key: document.getElementById('set-pk').value,
         paystack_secret_key: document.getElementById('set-sk').value,
-        invite_vip2_target: document.getElementById('set-invite-target').value,
-        invite_vip2_reward: document.getElementById('set-invite-reward').value,
+        invite_target_count: document.getElementById('set-invite-target').value,
+        invite_reward_amount: document.getElementById('set-invite-reward').value,
         new_admin_pin: document.getElementById('set-new-pin').value
       })
     });
@@ -1064,7 +1079,19 @@
     }
   }
 
-  // Real-Time Admin Chat
+  // Real-Time Admin Chat (with deduplication guard)
+  function appendAdminChatBubble(m) {
+    const box = document.getElementById('admin-chat-msgs');
+    if (document.getElementById(`admin-chat-msg-${m.id}`)) return;
+    if (m.id > LAST_ADMIN_MSG_ID) LAST_ADMIN_MSG_ID = m.id;
+    const div = document.createElement('div');
+    div.id = `admin-chat-msg-${m.id}`;
+    div.className = 'bubble ' + (m.sender === 'admin' ? 'b-admin' : 'b-user');
+    div.textContent = m.message;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+  }
+
   function selectChatThread(uid, label) {
     ACTIVE_CHAT_UID = uid;
     LAST_ADMIN_MSG_ID = 0;
@@ -1074,61 +1101,42 @@
   }
 
   async function pollAdminChatMessages() {
-    if (!ACTIVE_CHAT_UID) return;
-    const res = await fetch(`/api/admin/chat/messages?user_id=${ACTIVE_CHAT_UID}&after_id=${LAST_ADMIN_MSG_ID}`);
-    const d = await res.json();
-    if (d.ok && d.messages.length > 0) {
-      const box = document.getElementById('admin-chat-msgs');
-      let appended = false;
-      d.messages.forEach(m => {
-        if (m.id > LAST_ADMIN_MSG_ID) LAST_ADMIN_MSG_ID = m.id;
-        if (box.querySelector(`[data-msg-id="${m.id}"]`)) return;
-        const div = document.createElement('div');
-        div.setAttribute('data-msg-id', String(m.id));
-        div.className = 'bubble ' + (m.sender === 'admin' ? 'b-admin' : 'b-user');
-        div.textContent = m.message;
-        box.appendChild(div);
-        appended = true;
-      });
-      if (appended) box.scrollTop = box.scrollHeight;
+    if (!ACTIVE_CHAT_UID || IS_POLLING_ADMIN_CHAT) return;
+    IS_POLLING_ADMIN_CHAT = true;
+    try {
+      const targetUid = ACTIVE_CHAT_UID;
+      const res = await fetch(`/api/admin/chat/messages?user_id=${targetUid}&after_id=${LAST_ADMIN_MSG_ID}`);
+      const d = await res.json();
+      if (d.ok && ACTIVE_CHAT_UID === targetUid && d.messages.length > 0) {
+        d.messages.forEach(m => appendAdminChatBubble(m));
+      }
+    } finally {
+      IS_POLLING_ADMIN_CHAT = false;
     }
   }
 
   async function sendAdminReply(e) {
     e.preventDefault();
-    if (SENDING_ADMIN_CHAT) return;
+    if (IS_SENDING_ADMIN_CHAT) return;
     if (!ACTIVE_CHAT_UID) { toast('Select a user conversation first.'); return; }
     const inp = document.getElementById('admin-reply-input');
-    const btn = document.getElementById('admin-reply-btn');
     const msg = inp.value.trim();
     if (!msg) return;
-    SENDING_ADMIN_CHAT = true;
-    if (btn) btn.disabled = true;
+    IS_SENDING_ADMIN_CHAT = true;
     inp.value = '';
     try {
       const res = await fetch('/api/admin/chat/send', {
         method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ user_id: ACTIVE_CHAT_UID, message: msg })
       });
-      const data = await res.json();
-      if (data.ok) {
-        if (data.message && data.message.id) {
-          const box = document.getElementById('admin-chat-msgs');
-          if (!box.querySelector(`[data-msg-id="${data.message.id}"]`)) {
-            const div = document.createElement('div');
-            div.setAttribute('data-msg-id', String(data.message.id));
-            div.className = 'bubble b-admin';
-            div.textContent = data.message.message;
-            box.appendChild(div);
-            box.scrollTop = box.scrollHeight;
-          }
-          if (data.message.id > LAST_ADMIN_MSG_ID) LAST_ADMIN_MSG_ID = data.message.id;
-        }
+      const d = await res.json();
+      if (d.ok && d.message && d.message.id) {
+        appendAdminChatBubble(d.message);
+      } else if (d.ok) {
         await pollAdminChatMessages();
       }
     } finally {
-      SENDING_ADMIN_CHAT = false;
-      if (btn) btn.disabled = false;
+      IS_SENDING_ADMIN_CHAT = false;
     }
   }
 
