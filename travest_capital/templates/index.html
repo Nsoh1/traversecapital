@@ -1337,8 +1337,8 @@
       return { ok: false, error: 'Enter a valid 10-digit Ghana MTN or Telecel number (e.g. 024XXXXXXX or 020XXXXXXX).' };
     }
     const prefix = local.slice(0, 3);
-    if (!['024', '054', '055', '059', '020', '050'].includes(prefix)) {
-      return { ok: false, error: 'Only Ghana MTN (024, 054, 055, 059) and Telecel (020, 050) numbers are accepted.' };
+    if (!['024', '025','054', '055', '059', '020', '050'].includes(prefix)) {
+      return { ok: false, error: 'Invalid Number format' };
     }
     const sub = local.slice(3);
     if (/^(\d){6}$/.test(sub) || ['1234567', '7654321', '0123456'].includes(sub)) {
