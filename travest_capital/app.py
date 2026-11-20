@@ -7,6 +7,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from supabase import Client, create_client
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.abspath(os.path.join(BASE_DIR, ".."))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 
 app = Flask(
@@ -65,6 +66,22 @@ def normalize_mtn_phone(phone: str) -> str | None:
     return local
 
 
+def _find_html_file(filename: str) -> str | None:
+    """Locate an HTML file across common project directories."""
+    candidate_dirs = [
+        BASE_DIR,
+        REPO_ROOT,
+        os.path.join(BASE_DIR, "templates"),
+        os.path.join(REPO_ROOT, "templates"),
+        os.path.join(BASE_DIR, "frontend"),
+        os.path.join(REPO_ROOT, "frontend"),
+    ]
+    for folder in candidate_dirs:
+        if os.path.isfile(os.path.join(folder, filename)):
+            return folder
+    return None
+
+
 def require_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -115,18 +132,30 @@ def health():
 
 @app.route("/", methods=["GET"])
 def serve_index():
-    index_path = os.path.join(BASE_DIR, "index.html")
-    if os.path.isfile(index_path):
-        return send_from_directory(BASE_DIR, "index.html")
+    folder = _find_html_file("index.html")
+    if folder:
+        return send_from_directory(folder, "index.html")
     return jsonify({"message": "TravestCapital API running"}), 200
 
 
 @app.route("/admin", methods=["GET"])
 def serve_admin():
-    admin_path = os.path.join(BASE_DIR, "admin.html")
-    if os.path.isfile(admin_path):
-        return send_from_directory(BASE_DIR, "admin.html")
+    folder = _find_html_file("admin.html")
+    if folder:
+        return send_from_directory(folder, "admin.html")
     return jsonify({"error": "admin.html not found"}), 404
+
+
+@app.route("/<path:filename>", methods=["GET"])
+def serve_root_asset(filename: str):
+    """Serve static assets or secondary HTML files located in BASE_DIR or REPO_ROOT."""
+    if filename.startswith("api/"):
+        return jsonify({"error": "Not found"}), 404
+    for folder in (BASE_DIR, REPO_ROOT):
+        candidate = os.path.join(folder, filename)
+        if os.path.isfile(candidate) and os.path.commonpath([folder, candidate]) == folder:
+            return send_from_directory(folder, filename)
+    return jsonify({"error": "Not found"}), 404
 
 
 @app.route("/api/register", methods=["POST"])
