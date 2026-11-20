@@ -1352,6 +1352,21 @@
     return /^(024|054|055|059|020|050)\d{7}$/.test(cleaned) ? cleaned : null;
   }
 
+  async function parseJsonSafely(res) {
+    const rawText = await res.text();
+    if (!rawText) {
+      return { ok: res.ok, error: `Server returned an empty response (HTTP ${res.status}).` };
+    }
+    try {
+      return JSON.parse(rawText);
+    } catch (parseErr) {
+      return {
+        ok: false,
+        error: `Unexpected server response (HTTP ${res.status}). Please try again.`
+      };
+    }
+  }
+
   function switchAuthMode(mode) {
     document.getElementById('tab-login-btn').classList.toggle('active', mode === 'login');
     document.getElementById('tab-reg-btn').classList.toggle('active', mode === 'register');
@@ -1361,10 +1376,24 @@
 
   async function handleRegister(e) {
     e.preventDefault();
-    const rawPhone = document.getElementById('reg-phone').value;
+    const nameVal = (document.getElementById('reg-name').value || '').trim();
+    const rawPhone = (document.getElementById('reg-phone').value || '').trim();
+    const passwordVal = (document.getElementById('reg-password').value || '').trim();
+    const refVal = (document.getElementById('reg-ref').value || '').trim().toUpperCase();
+
+    if (!nameVal || !rawPhone || !passwordVal) {
+      showToast('Full name, phone number, and password are required.');
+      return;
+    }
+
     const validPhone = validateGhanaPhoneClient(rawPhone);
     if (!validPhone) {
       showToast('Invalid phone number. Enter a valid 10-digit Ghana MTN (024, 054, 055, 059) or Telecel (020, 050) number.');
+      return;
+    }
+
+    if (passwordVal.length < 4) {
+      showToast('Password must be at least 4 characters.');
       return;
     }
 
@@ -1376,23 +1405,24 @@
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
-          name: document.getElementById('reg-name').value,
+          name: nameVal,
           phone: validPhone,
-          password: document.getElementById('reg-password').value,
-          referral_code: document.getElementById('reg-ref').value
+          password: passwordVal,
+          referral_code: refVal
         })
       });
-      const data = await res.json();
-      if (!data.ok) {
-        showToast(data.error || 'Registration failed');
+      const data = await parseJsonSafely(res);
+      if (!res.ok || !data.ok) {
+        showToast(data.error || `Registration failed (HTTP ${res.status})`);
       } else {
-        showToast(data.message);
+        showToast(data.message || 'Account created successfully! Please sign in.');
         document.getElementById('login-phone').value = validPhone;
         document.getElementById('register-form').reset();
         switchAuthMode('login');
       }
     } catch (err) {
-      showToast('Network error. Please try again.');
+      console.error('Register fetch error:', err);
+      showToast('Network error while registering. Please check your connection and try again.');
     } finally {
       btn.disabled = false;
       btn.textContent = 'Register Account';
@@ -1421,6 +1451,14 @@
 
   async function handleLogin(e) {
     e.preventDefault();
+    const rawPhone = (document.getElementById('login-phone').value || '').trim();
+    const passwordVal = (document.getElementById('login-password').value || '').trim();
+    if (!rawPhone || !passwordVal) {
+      showToast('Enter your phone number and password.');
+      return;
+    }
+
+    const phoneToSend = validateGhanaPhoneClient(rawPhone) || rawPhone;
     const btn = document.getElementById('login-submit-btn');
     btn.disabled = true;
     btn.textContent = 'Authenticating...';
@@ -1429,22 +1467,25 @@
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
-          phone: document.getElementById('login-phone').value,
-          password: document.getElementById('login-password').value
+          phone: phoneToSend,
+          password: passwordVal
         })
       });
-      const data = await res.json();
-      if (!data.ok) {
-        showToast(data.error || 'Login failed');
+      const data = await parseJsonSafely(res);
+      if (!res.ok || !data.ok) {
+        showToast(data.error || `Login failed (HTTP ${res.status})`);
       } else {
-        await loadUserState();
+        const stateLoaded = await loadUserState();
         document.getElementById('auth-view').style.display = 'none';
         document.getElementById('app-view').style.display = 'block';
-        playSparkleWelcome(data.user_name);
-        startChatPolling();
+        playSparkleWelcome(data.user_name || (APP_STATE && APP_STATE.user && APP_STATE.user.name) || 'Investor');
+        if (stateLoaded) {
+          startChatPolling();
+        }
       }
     } catch (err) {
-      showToast('Connection error.');
+      console.error('Login fetch error:', err);
+      showToast('Connection error while signing in. Please try again.');
     } finally {
       btn.disabled = false;
       btn.textContent = 'Access Portfolio';
@@ -1471,17 +1512,25 @@
   }
 
   async function loadUserState() {
-    const res = await fetch('/api/user/state');
-    if (res.status === 401 || res.status === 403) {
-      document.getElementById('auth-view').style.display = 'flex';
-      document.getElementById('app-view').style.display = 'none';
+    try {
+      const res = await fetch('/api/user/state');
+      if (res.status === 401 || res.status === 403) {
+        document.getElementById('auth-view').style.display = 'flex';
+        document.getElementById('app-view').style.display = 'none';
+        return false;
+      }
+      const data = await parseJsonSafely(res);
+      if (!res.ok || !data.ok) {
+        showToast(data.error || 'Could not load portfolio state.');
+        return false;
+      }
+      APP_STATE = data;
+      renderAllViews();
+      return true;
+    } catch (err) {
+      console.error('loadUserState error:', err);
       return false;
     }
-    const data = await res.json();
-    if (!data.ok) return false;
-    APP_STATE = data;
-    renderAllViews();
-    return true;
   }
 
   function renderAllViews() {
