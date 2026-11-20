@@ -255,7 +255,7 @@ class NewsItem(Base):
 # ==============================================================================
 # GHANA MTN & TELECEL PHONE VALIDATION & NORMALIZATION
 # ==============================================================================
-VALID_GH_PREFIXES = ('024', '054', '055', '059', '020', '050')
+VALID_GH_PREFIXES = ('024', '025', '054', '055', '059', '020', '050')
 
 
 def normalize_and_validate_ghana_phone(raw_phone):
@@ -282,7 +282,7 @@ def normalize_and_validate_ghana_phone(raw_phone):
 
     prefix = local[:3]
     if prefix not in VALID_GH_PREFIXES:
-        return None, 'Only Ghana MTN (024, 025,054, 055, 059) and Telecel (020, 050) numbers are accepted.'
+        return None, 'Invalid number format'
 
     subscriber_digits = local[3:]
     # Reject obviously fake/dummy patterns
