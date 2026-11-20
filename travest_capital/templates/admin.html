@@ -203,6 +203,13 @@
     border-radius: 10px;
     font-family: inherit;
     font-size: 14px;
+    background: #ffffff;
+    color: var(--ink);
+  }
+  .inp:focus {
+    outline: none;
+    border-color: var(--brand-blue);
+    box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12);
   }
   .btn {
     border: none;
@@ -307,7 +314,7 @@
       <button class="side-link" onclick="showSec('sec-spin', this)">Spin Devices & Orders</button>
       <button class="side-link" onclick="showSec('sec-chat', this)">Live Support Chat <span id="unread-badge" style="background:#dc2626; padding:2px 7px; border-radius:999px; font-size:11px; display:none;">0</span></button>
       <button class="side-link" onclick="showSec('sec-news', this)">News & Announcements</button>
-      <button class="side-link" onclick="showSec('sec-about', this)">About Company Content</button>
+      <button class="side-link" onclick="showSec('sec-about', this)">About Company</button>
       <button class="side-link" onclick="showSec('sec-settings', this)">Paystack & System Rules</button>
 
       <div style="margin-top:auto;">
@@ -500,7 +507,7 @@
               <div class="chat-msgs" id="admin-chat-msgs"></div>
               <form onsubmit="sendAdminReply(event)" style="padding:10px; border-top:1px solid var(--border); display:flex; gap:8px;">
                 <input type="text" id="admin-reply-input" class="inp" placeholder="Type instant reply..." required />
-                <button type="submit" class="btn">Send Reply</button>
+                <button type="submit" class="btn" id="admin-reply-btn">Send Reply</button>
               </form>
             </div>
           </div>
@@ -522,60 +529,67 @@
         <div class="panel" id="admin-news-list"></div>
       </section>
 
-      <!-- 6B. ABOUT COMPANY MANAGEMENT -->
+      <!-- 7. ABOUT COMPANY EDITOR -->
       <section id="sec-about" class="sec">
-        <h1 style="font-family:'Space Grotesk',sans-serif; font-size:24px; margin-bottom:16px;">About Company Content</h1>
+        <h1 style="font-family:'Space Grotesk',sans-serif; font-size:24px; margin-bottom:16px;">About Company Profile (User Mine Tab)</h1>
         <div class="panel">
-          <div class="panel-title">Configure User "About Company" View (Mine Tab)</div>
-          <p style="font-size:13px; color:var(--ink-muted); margin-bottom:14px;">Set the company story/description (prioritized clearly at the top) plus optional image or video media.</p>
-          <div class="fg" style="margin-bottom:12px;">
-            <label>Company Description / Overview Text</label>
-            <textarea id="set-about-text" class="inp" rows="6" placeholder="Write about TravestCapital, mission, operations, and shareholder benefits..." oninput="this.dataset.dirty='1'"></textarea>
-          </div>
-          <div class="form-row">
-            <div class="fg">
-              <label>Optional Image URL (or Upload Below)</label>
-              <input type="text" id="set-about-image" class="inp" placeholder="https://... or /static/uploads/..." oninput="this.dataset.dirty='1'" />
+          <div class="panel-title">Edit Company Information & Optional Media</div>
+          <p style="font-size:13px; color:var(--ink-muted); margin-bottom:14px;">
+            Customize what shareholders see when they open <strong>About Company</strong> in the <strong>Mine</strong> tab. Company text is required; image and video are optional.
+          </p>
+          <form id="about-company-form" onsubmit="saveAboutCompany(event)">
+            <div class="fg" style="margin-bottom:12px;">
+              <label>Company Overview & Mission Text (Required)</label>
+              <textarea id="about-text" name="text" class="inp" rows="5" placeholder="Write about TravestCapital..." required oninput="this.dataset.dirty='1'"></textarea>
             </div>
-            <div class="fg">
-              <label>Optional Video URL (MP4 / WebM or Upload Below)</label>
-              <input type="text" id="set-about-video" class="inp" placeholder="https://... or /static/uploads/..." oninput="this.dataset.dirty='1'" />
+            <div class="form-row">
+              <div class="fg">
+                <label>Company Image URL (Optional)</label>
+                <input type="text" id="about-image-url" name="image_url" class="inp" placeholder="https://... or upload below" oninput="this.dataset.dirty='1'" />
+              </div>
+              <div class="fg">
+                <label>Or Upload Company Image File (Optional)</label>
+                <input type="file" id="about-image-file" name="image_file" accept="image/*" class="inp" />
+              </div>
             </div>
-          </div>
-          <div class="form-row">
-            <div class="fg">
-              <label>Upload Company Image File (Optional)</label>
-              <input type="file" id="about-image-file" accept="image/*" class="inp" onchange="uploadAboutMedia(this, 'set-about-image')" />
+            <div class="form-row">
+              <div class="fg">
+                <label>Company Video URL (Optional — MP4 or YouTube/Embed URL)</label>
+                <input type="text" id="about-video-url" name="video_url" class="inp" placeholder="https://... or upload MP4 below" oninput="this.dataset.dirty='1'" />
+              </div>
+              <div class="fg">
+                <label>Or Upload Company Video File (Optional — MP4/WEBM)</label>
+                <input type="file" id="about-video-file" name="video_file" accept="video/mp4,video/webm,video/ogg" class="inp" />
+              </div>
             </div>
-            <div class="fg">
-              <label>Upload Company Video File (Optional)</label>
-              <input type="file" id="about-video-file" accept="video/mp4,video/webm,video/quicktime" class="inp" onchange="uploadAboutMedia(this, 'set-about-video')" />
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px;">
+              <button type="submit" class="btn btn-green">Save About Company</button>
+              <button type="button" class="btn btn-red" onclick="clearAboutMedia()">Clear Optional Media</button>
             </div>
-          </div>
-          <button class="btn btn-green" onclick="saveAboutCompany()">Save About Company Content</button>
+          </form>
         </div>
       </section>
 
-      <!-- 7. PAYSTACK & SYSTEM SETTINGS -->
+      <!-- 8. PAYSTACK & SYSTEM SETTINGS -->
       <section id="sec-settings" class="sec">
         <h1 style="font-family:'Space Grotesk',sans-serif; font-size:24px; margin-bottom:16px;">System Rules & Paystack Live Keys</h1>
         <div class="panel">
-          <div class="tap-trigger" onclick="document.getElementById('invite-rule-drawer').classList.toggle('open')">
-            <span>Configure Get Hired Invite Milestone & Reward</span>
+          <div class="tap-trigger" onclick="document.getElementById('referral-rules-drawer').classList.toggle('open')">
+            <span>Configure Get Hired Referral Target & Reward Amount</span>
             <span>▾</span>
           </div>
-          <div id="invite-rule-drawer" class="drawer-body">
+          <div id="referral-rules-drawer" class="drawer-body open">
             <div class="form-row">
               <div class="fg">
-                <label>Required Invited VIP 2 Users (Default: 10)</label>
-                <input type="number" min="1" id="set-invite-target" class="inp" oninput="this.dataset.dirty='1'" />
+                <label>Required Invited VIP 2 Users (Target Count)</label>
+                <input type="number" id="set-ref-target" min="1" step="1" class="inp" placeholder="e.g. 10" oninput="this.dataset.dirty='1'" />
               </div>
               <div class="fg">
                 <label>Milestone Reward Amount (GHS)</label>
-                <input type="number" min="0" step="0.01" id="set-invite-reward" class="inp" oninput="this.dataset.dirty='1'" />
+                <input type="number" id="set-ref-reward" min="1" step="0.01" class="inp" placeholder="e.g. 2000" oninput="this.dataset.dirty='1'" />
               </div>
             </div>
-            <button class="btn btn-green" onclick="saveSettings()">Save Invite Milestone Rules</button>
+            <button class="btn btn-green" onclick="saveSettings()">Save Referral Milestone Rules</button>
           </div>
 
           <div class="tap-trigger" onclick="document.getElementById('min-w-drawer').classList.toggle('open')">
@@ -617,8 +631,8 @@
   let ACTIVE_CHAT_UID = null;
   let LAST_ADMIN_MSG_ID = 0;
   let ADMIN_POLL_TIMER = null;
-  let IS_SENDING_ADMIN_CHAT = false;
-  let IS_POLLING_ADMIN_CHAT = false;
+  let RENDERED_ADMIN_MSG_IDS = new Set();
+  let ADMIN_SENDING_CHAT = false;
 
   function toast(msg) {
     const t = document.getElementById('toast');
@@ -705,11 +719,11 @@
     const minWInput = document.getElementById('set-min-w');
     const pkInput = document.getElementById('set-pk');
     const skInput = document.getElementById('set-sk');
-    const invTargetInput = document.getElementById('set-invite-target');
-    const invRewardInput = document.getElementById('set-invite-reward');
-    const aboutTextInput = document.getElementById('set-about-text');
-    const aboutImgInput = document.getElementById('set-about-image');
-    const aboutVidInput = document.getElementById('set-about-video');
+    const refTargetInput = document.getElementById('set-ref-target');
+    const refRewardInput = document.getElementById('set-ref-reward');
+    const aboutTextInput = document.getElementById('about-text');
+    const aboutImgInput = document.getElementById('about-image-url');
+    const aboutVidInput = document.getElementById('about-video-url');
 
     if (document.activeElement !== minWInput && !minWInput.dataset.dirty) {
       minWInput.value = data.settings.min_withdrawal;
@@ -720,11 +734,11 @@
     if (document.activeElement !== skInput && !skInput.dataset.dirty) {
       skInput.value = data.settings.paystack_secret_key;
     }
-    if (document.activeElement !== invTargetInput && !invTargetInput.dataset.dirty) {
-      invTargetInput.value = data.settings.invite_target_count ?? 10;
+    if (document.activeElement !== refTargetInput && !refTargetInput.dataset.dirty) {
+      refTargetInput.value = data.settings.referral_target_count;
     }
-    if (document.activeElement !== invRewardInput && !invRewardInput.dataset.dirty) {
-      invRewardInput.value = data.settings.invite_reward_amount ?? 2000;
+    if (document.activeElement !== refRewardInput && !refRewardInput.dataset.dirty) {
+      refRewardInput.value = data.settings.referral_reward_amount;
     }
     if (document.activeElement !== aboutTextInput && !aboutTextInput.dataset.dirty) {
       aboutTextInput.value = data.settings.about_company_text || '';
@@ -795,12 +809,11 @@
       </tr>
     `).join('');
 
-    // Spin devices table (preserve active/dirty input while typing so cursor & edits are never disrupted)
-    const devTbody = document.getElementById('admin-devices-table');
-    const activeDevInput = document.activeElement && devTbody.contains(document.activeElement) ? document.activeElement : null;
-    const hasDirtyDevInput = !!devTbody.querySelector('input[data-dirty="1"]');
-    if (!activeDevInput && !hasDirtyDevInput) {
-      devTbody.innerHTML = data.devices.map(d => `
+    // Spin devices table: preserve active/focused discount input so typing & clearing is never overwritten by 2s poll
+    const activeEl = document.activeElement;
+    const activeDeviceInputId = activeEl && activeEl.classList.contains('spin-discount-inp') ? activeEl.dataset.deviceId : null;
+    if (!activeDeviceInputId) {
+      document.getElementById('admin-devices-table').innerHTML = data.devices.map(d => `
         <tr>
           <td><img src="${d.image_url || 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=200&q=60'}" style="width:48px; height:48px; object-fit:cover; border-radius:8px;" /></td>
           <td><strong>${esc(d.name)}</strong><br><small>${esc(d.specs)}</small></td>
@@ -811,10 +824,10 @@
                   <option value="random" ${d.difficulty==='random'?'selected':''}>Random</option>
                   <option value="hard" ${d.difficulty==='hard'?'selected':''}>Hard</option>
                  </select>`
-              : `<div style="display:flex; gap:6px; align-items:center;">
-                  <input type="text" id="dev-disc-${d.id}" class="inp" style="max-width:210px;" value="${esc(d.discount_options.join(','))}" oninput="this.dataset.dirty='1'" onkeydown="if(event.key==='Enter'){event.preventDefault(); saveDeviceDiscountsBtn(${d.id}, ${d.original_price});}" />
+              : `<div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                  <input type="text" id="disc-inp-${d.id}" data-device-id="${d.id}" class="inp spin-discount-inp" style="max-width:210px;" value="${d.discount_options.join(', ')}" placeholder="2500, 2800, 3100..." />
                   <button type="button" class="btn btn-sm btn-green" onclick="saveDeviceDiscountsBtn(${d.id}, ${d.original_price})">Save</button>
-                 </div>`
+                </div>`
             }
           </td>
           <td><button class="btn btn-red btn-sm" onclick="deleteDevice(${d.id})">Remove</button></td>
@@ -971,20 +984,23 @@
   }
 
   async function saveDeviceDiscountsBtn(id, orig) {
-    const inp = document.getElementById(`dev-disc-${id}`);
+    const inp = document.getElementById('disc-inp-' + id);
     if (!inp) return;
-    await updateDeviceDiscounts(id, orig, inp.value);
-    delete inp.dataset.dirty;
-    loadAdminOverview();
-  }
-
-  async function updateDeviceDiscounts(id, orig, csv) {
-    const arr = csv.split(',').map(x => parseFloat(x.trim())).filter(n => !isNaN(n));
-    await fetch('/api/admin/devices/update', {
+    const arr = inp.value.split(',').map(x => parseFloat(x.trim())).filter(n => !isNaN(n) && n > 0);
+    if (arr.length < 2) {
+      toast('Enter at least 2 valid numbers separated by commas (e.g. 2500, 2800, 3100).');
+      return;
+    }
+    const res = await fetch('/api/admin/devices/update', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ id, spin_type: 'sale', difficulty: 'random', original_price: orig, discount_options: arr })
     });
-    toast('Discount wheel values updated.');
+    const d = await res.json();
+    toast(d.message || d.error || 'Discount wheel values updated.');
+    if (d.ok) {
+      inp.blur();
+      loadAdminOverview();
+    }
   }
 
   async function deleteDevice(id) {
@@ -1018,40 +1034,36 @@
     loadAdminOverview();
   }
 
-  async function uploadAboutMedia(fileInput, targetInputId) {
-    if (!fileInput.files || !fileInput.files[0]) return;
-    const fd = new FormData();
-    fd.append('media', fileInput.files[0]);
-    toast('Uploading media...');
-    const res = await fetch('/api/admin/about/upload-media', { method: 'POST', body: fd });
-    const d = await res.json();
-    if (d.ok) {
-      const target = document.getElementById(targetInputId);
-      target.value = d.url;
-      target.dataset.dirty = '1';
-      toast('Media uploaded! Click "Save About Company Content" to publish.');
-    } else {
-      toast(d.error || 'Upload failed.');
-    }
-  }
-
-  async function saveAboutCompany() {
-    const res = await fetch('/api/admin/settings/save', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        about_company_text: document.getElementById('set-about-text').value,
-        about_company_image: document.getElementById('set-about-image').value,
-        about_company_video: document.getElementById('set-about-video').value
-      })
+  async function saveAboutCompany(e) {
+    e.preventDefault();
+    const form = document.getElementById('about-company-form');
+    const formData = new FormData(form);
+    const res = await fetch('/api/admin/about/save', {
+      method: 'POST',
+      body: formData
     });
     const d = await res.json();
     toast(d.message || d.error);
     if (d.ok) {
-      delete document.getElementById('set-about-text').dataset.dirty;
-      delete document.getElementById('set-about-image').dataset.dirty;
-      delete document.getElementById('set-about-video').dataset.dirty;
+      delete document.getElementById('about-text').dataset.dirty;
+      delete document.getElementById('about-image-url').dataset.dirty;
+      delete document.getElementById('about-video-url').dataset.dirty;
+      document.getElementById('about-image-file').value = '';
+      document.getElementById('about-video-file').value = '';
       loadAdminOverview();
     }
+  }
+
+  function clearAboutMedia() {
+    const imgInp = document.getElementById('about-image-url');
+    const vidInp = document.getElementById('about-video-url');
+    imgInp.value = '';
+    vidInp.value = '';
+    imgInp.dataset.dirty = '1';
+    vidInp.dataset.dirty = '1';
+    document.getElementById('about-image-file').value = '';
+    document.getElementById('about-video-file').value = '';
+    toast('Optional image/video fields cleared. Click "Save About Company" to apply.');
   }
 
   async function saveSettings() {
@@ -1061,8 +1073,8 @@
         min_withdrawal: document.getElementById('set-min-w').value,
         paystack_public_key: document.getElementById('set-pk').value,
         paystack_secret_key: document.getElementById('set-sk').value,
-        invite_target_count: document.getElementById('set-invite-target').value,
-        invite_reward_amount: document.getElementById('set-invite-reward').value,
+        referral_target_count: document.getElementById('set-ref-target').value,
+        referral_reward_amount: document.getElementById('set-ref-reward').value,
         new_admin_pin: document.getElementById('set-new-pin').value
       })
     });
@@ -1072,57 +1084,56 @@
       delete document.getElementById('set-min-w').dataset.dirty;
       delete document.getElementById('set-pk').dataset.dirty;
       delete document.getElementById('set-sk').dataset.dirty;
-      delete document.getElementById('set-invite-target').dataset.dirty;
-      delete document.getElementById('set-invite-reward').dataset.dirty;
+      delete document.getElementById('set-ref-target').dataset.dirty;
+      delete document.getElementById('set-ref-reward').dataset.dirty;
       document.getElementById('set-new-pin').value = '';
       loadAdminOverview();
     }
   }
 
-  // Real-Time Admin Chat (with deduplication guard)
+  // Real-Time Admin Chat (Deduplicated single-render guarantee)
+  function selectChatThread(uid, label) {
+    ACTIVE_CHAT_UID = uid;
+    LAST_ADMIN_MSG_ID = 0;
+    RENDERED_ADMIN_MSG_IDS.clear();
+    document.getElementById('active-chat-user').textContent = 'Chatting with: ' + label;
+    document.getElementById('admin-chat-msgs').innerHTML = '';
+    pollAdminChatMessages();
+  }
+
   function appendAdminChatBubble(m) {
-    const box = document.getElementById('admin-chat-msgs');
-    if (document.getElementById(`admin-chat-msg-${m.id}`)) return;
+    if (!m || !m.id || RENDERED_ADMIN_MSG_IDS.has(m.id)) return;
+    RENDERED_ADMIN_MSG_IDS.add(m.id);
     if (m.id > LAST_ADMIN_MSG_ID) LAST_ADMIN_MSG_ID = m.id;
+    const box = document.getElementById('admin-chat-msgs');
     const div = document.createElement('div');
-    div.id = `admin-chat-msg-${m.id}`;
     div.className = 'bubble ' + (m.sender === 'admin' ? 'b-admin' : 'b-user');
     div.textContent = m.message;
     box.appendChild(div);
     box.scrollTop = box.scrollHeight;
   }
 
-  function selectChatThread(uid, label) {
-    ACTIVE_CHAT_UID = uid;
-    LAST_ADMIN_MSG_ID = 0;
-    document.getElementById('active-chat-user').textContent = 'Chatting with: ' + label;
-    document.getElementById('admin-chat-msgs').innerHTML = '';
-    pollAdminChatMessages();
-  }
-
   async function pollAdminChatMessages() {
-    if (!ACTIVE_CHAT_UID || IS_POLLING_ADMIN_CHAT) return;
-    IS_POLLING_ADMIN_CHAT = true;
-    try {
-      const targetUid = ACTIVE_CHAT_UID;
-      const res = await fetch(`/api/admin/chat/messages?user_id=${targetUid}&after_id=${LAST_ADMIN_MSG_ID}`);
-      const d = await res.json();
-      if (d.ok && ACTIVE_CHAT_UID === targetUid && d.messages.length > 0) {
-        d.messages.forEach(m => appendAdminChatBubble(m));
-      }
-    } finally {
-      IS_POLLING_ADMIN_CHAT = false;
+    if (!ACTIVE_CHAT_UID) return;
+    const targetUid = ACTIVE_CHAT_UID;
+    const res = await fetch(`/api/admin/chat/messages?user_id=${targetUid}&after_id=${LAST_ADMIN_MSG_ID}`);
+    const d = await res.json();
+    if (d.ok && ACTIVE_CHAT_UID === targetUid && d.messages.length > 0) {
+      d.messages.forEach(m => appendAdminChatBubble(m));
     }
   }
 
   async function sendAdminReply(e) {
     e.preventDefault();
-    if (IS_SENDING_ADMIN_CHAT) return;
+    if (ADMIN_SENDING_CHAT) return;
     if (!ACTIVE_CHAT_UID) { toast('Select a user conversation first.'); return; }
     const inp = document.getElementById('admin-reply-input');
+    const btn = document.getElementById('admin-reply-btn');
     const msg = inp.value.trim();
     if (!msg) return;
-    IS_SENDING_ADMIN_CHAT = true;
+
+    ADMIN_SENDING_CHAT = true;
+    btn.disabled = true;
     inp.value = '';
     try {
       const res = await fetch('/api/admin/chat/send', {
@@ -1130,13 +1141,14 @@
         body: JSON.stringify({ user_id: ACTIVE_CHAT_UID, message: msg })
       });
       const d = await res.json();
-      if (d.ok && d.message && d.message.id) {
+      if (d.ok && d.message) {
         appendAdminChatBubble(d.message);
-      } else if (d.ok) {
-        await pollAdminChatMessages();
+      } else if (d.error) {
+        toast(d.error);
       }
     } finally {
-      IS_SENDING_ADMIN_CHAT = false;
+      ADMIN_SENDING_CHAT = false;
+      btn.disabled = false;
     }
   }
 
