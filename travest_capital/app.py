@@ -301,6 +301,10 @@ def run_schema_migrations(db):
     alter_statements = [
         "ALTER TABLE users ADD COLUMN last_claim_date VARCHAR(16) DEFAULT ''",
         "ALTER TABLE users ADD COLUMN last_free_spin_date VARCHAR(16) DEFAULT ''",
+        "ALTER TABLE spin_devices ADD COLUMN image_url TEXT NOT NULL DEFAULT ''",
+        "ALTER TABLE spin_devices ADD COLUMN original_price DOUBLE PRECISION DEFAULT 0.0",
+        "ALTER TABLE spin_devices ADD COLUMN discount_options TEXT DEFAULT '[]'",
+        "ALTER TABLE spin_devices ADD COLUMN difficulty VARCHAR(20) DEFAULT 'random'",
     ]
     for stmt in alter_statements:
         try:
