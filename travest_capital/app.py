@@ -260,7 +260,7 @@ VALID_GH_PREFIXES = ('024', '025', '054', '055', '059', '020', '050')
 
 def normalize_and_validate_ghana_phone(raw_phone):
     """
-    Validates Ghana MTN (024,025,054, 055, 059) and Telecel (020, 050) numbers.
+    Validates Ghana MTN (024, 025, 054, 055, 059) and Telecel (020, 050) numbers.
     Accepts 10-digit local format (024XXXXXXX) or international (+23324XXXXXXX / 23324XXXXXXX),
     normalizing to canonical 10-digit local format '0XXXXXXXXX'.
     Rejects fake/repeated sequences like 0240000000 or 0241234567.
@@ -278,11 +278,11 @@ def normalize_and_validate_ghana_phone(raw_phone):
         local = cleaned
 
     if not re.fullmatch(r'0\d{9}', local):
-        return None, 'Enter a valid 10-digit Ghana MTN or Telecel number (e.g. 024XXXXXXX or 020XXXXXXX).'
+        return None, 'Invalid number format.'
 
     prefix = local[:3]
     if prefix not in VALID_GH_PREFIXES:
-        return None, 'Invalid Number format.'
+        return None, 'Invalid number format.'
 
     subscriber_digits = local[3:]
     # Reject obviously fake/dummy patterns
