@@ -856,7 +856,7 @@
       <!-- LOGIN FORM -->
       <form id="login-form" onsubmit="handleLogin(event)">
         <div class="form-group">
-          <label>Phone Number</label>
+          <label>Phone Number (Ghana MTN / Telecel)</label>
           <input type="tel" id="login-phone" class="input-3d" placeholder="e.g. 0241234567" required />
         </div>
         <div class="form-group">
@@ -941,7 +941,7 @@
         <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1579532537598-459ecdaf39cc?auto=format&fit=crop&w=1200&q=80');">
           <div class="hero-slide-content">
             <span style="background:rgba(217,119,6,0.9); padding:4px 10px; border-radius:6px; font-size:11px; font-weight:800;">TRAVESTCAPITAL PARTNER REWARDS</span>
-            <h3 style="font-family:'Space Grotesk',sans-serif; font-size:20px; margin-top:6px;" id="hero-milestone-headline">Earn 10% Referral Bonus + GHS 2,000 VIP 2 Milestone</h3>
+            <h3 style="font-family:'Space Grotesk',sans-serif; font-size:20px; margin-top:6px;" id="hero-milestone-banner">Earn 10% Referral Bonus + GHS 2,000 VIP 2 Milestone</h3>
             <p style="font-size:12.5px; opacity:0.88;">Grow your network and unlock complimentary flagship hardware spins.</p>
           </div>
         </div>
@@ -1062,7 +1062,7 @@
     <div id="tab-hired" class="tab-section">
       <div class="card-panel" style="background:linear-gradient(135deg, #064e3b, #047857); color:#fff;">
         <span style="background:rgba(255,255,255,0.18); padding:4px 10px; border-radius:6px; font-size:11.5px; font-weight:800;">PARTNER RECRUITMENT PROGRAM</span>
-        <h2 id="hired-hero-headline" style="font-family:'Space Grotesk',sans-serif; font-size:24px; margin-top:10px;">Get 10 users to buy shares in VIP 2 (GHS 600) and receive GHS 2,000 instantly!</h2>
+        <h2 id="hired-headline" style="font-family:'Space Grotesk',sans-serif; font-size:24px; margin-top:10px;">Get 10 users to buy shares in VIP 2 (GHS 600) and receive GHS 2,000 instantly!</h2>
         <p style="font-size:13.5px; opacity:0.9; margin-top:8px; line-height:1.5;">
           Generate and share your unique invitation code below. When your invited partners purchase <strong>VIP 2</strong> shares and enter your unique code during checkout, your recruitment counter increases automatically.
         </p>
@@ -1106,7 +1106,7 @@
       <div class="panel-header">
         <div>
           <h2 class="panel-title" style="font-size:20px;">TravestCapital Device Spin Vault</h2>
-          <p style="font-size:13px; color:var(--ink-muted);">Free VIP 2 Prize Spins (resets daily at 00:00 midnight) & Unlimited Discount Spins for all active investors.</p>
+          <p style="font-size:13px; color:var(--ink-muted);">Free VIP 2 Prize Spins (resets daily at 00:00) & Unlimited Discount Spins for all active investors.</p>
         </div>
       </div>
 
@@ -1140,17 +1140,19 @@
       <div class="card-panel">
         <div class="panel-title" style="margin-bottom:14px;">Account Security & Management (Tap to Open)</div>
 
-        <!-- Tap 0: About Company -->
+        <!-- Tap 1: About Company -->
         <div class="tap-setting-row" onclick="toggleMineForm('mine-about-drawer')">
           <span>About Company</span>
           <span>▾</span>
         </div>
         <div id="mine-about-drawer" class="collapsible-drawer" style="margin-bottom:12px;">
-          <div id="about-company-text-display" style="font-size:14px; color:var(--ink); line-height:1.65; white-space:pre-line;"></div>
-          <div id="about-company-media-display" style="margin-top:14px; display:flex; flex-direction:column; gap:12px;"></div>
+          <div id="about-company-content" style="display:flex; flex-direction:column; gap:12px;">
+            <p id="about-company-text-display" style="font-size:14px; color:var(--ink); line-height:1.65; white-space:pre-line;"></p>
+            <div id="about-company-media-wrap" style="display:none; flex-direction:column; gap:12px;"></div>
+          </div>
         </div>
 
-        <!-- Tap 1: Reset Password -->
+        <!-- Tap 2: Reset Password -->
         <div class="tap-setting-row" onclick="toggleMineForm('mine-pw-form')">
           <span>Reset Account Password</span>
           <span>▾</span>
@@ -1167,7 +1169,7 @@
           <button class="btn-primary-3d" onclick="submitResetPassword()">Update Password</button>
         </div>
 
-        <!-- Tap 2: Change Phone Number -->
+        <!-- Tap 3: Change Phone Number -->
         <div class="tap-setting-row" onclick="toggleMineForm('mine-phone-form')">
           <span>Change Registered Phone Number</span>
           <span>▾</span>
@@ -1184,7 +1186,7 @@
           <button class="btn-primary-3d" onclick="submitChangePhone()">Save New Phone Number</button>
         </div>
 
-        <!-- Tap 3: Transaction History -->
+        <!-- Tap 4: Transaction History -->
         <div class="tap-setting-row" onclick="toggleMineForm('mine-tx-drawer')">
           <span>View Wallet & Share Transaction Ledger</span>
           <span>▾</span>
@@ -1237,7 +1239,7 @@
     <div class="chat-body" id="user-chat-messages"></div>
     <form class="chat-footer" onsubmit="sendUserChat(event)">
       <input type="text" id="user-chat-input" class="input-3d" style="padding:10px 12px;" placeholder="Message Support..." required />
-      <button type="submit" class="btn-primary-3d" style="width:auto; padding:10px 16px;">Send</button>
+      <button type="submit" id="user-chat-send-btn" class="btn-primary-3d" style="width:auto; padding:10px 16px;">Send</button>
     </form>
   </div>
 </section>
@@ -1319,8 +1321,31 @@
   let SPIN_RESULT_DATA = null;
   let LAST_CHAT_ID = 0;
   let CHAT_POLL_TIMER = null;
-  let IS_SENDING_USER_CHAT = false;
-  let IS_POLLING_USER_CHAT = false;
+  let RENDERED_USER_MSG_IDS = new Set();
+  let USER_SENDING_CHAT = false;
+
+  // Ghana MTN (024, 054, 055, 059) & Telecel (020, 050) Phone Validation
+  function validateGhanaPhone(raw) {
+    const cleaned = String(raw || '').trim().replace(/[\s\-\(\)]+/g, '');
+    let local = cleaned;
+    if (cleaned.startsWith('+233')) {
+      local = '0' + cleaned.slice(4);
+    } else if (cleaned.startsWith('233') && cleaned.length === 12) {
+      local = '0' + cleaned.slice(3);
+    }
+    if (!/^0\d{9}$/.test(local)) {
+      return { ok: false, error: 'Enter a valid 10-digit Ghana MTN or Telecel number (e.g. 024XXXXXXX or 020XXXXXXX).' };
+    }
+    const prefix = local.slice(0, 3);
+    if (!['024', '054', '055', '059', '020', '050'].includes(prefix)) {
+      return { ok: false, error: 'Only Ghana MTN (024, 054, 055, 059) and Telecel (020, 050) numbers are accepted.' };
+    }
+    const sub = local.slice(3);
+    if (/^(\d){6}$/.test(sub) || ['1234567', '7654321', '0123456'].includes(sub)) {
+      return { ok: false, error: 'Please enter a genuine active MTN or Telecel phone number.' };
+    }
+    return { ok: true, normalized: local };
+  }
 
   // 3D Tilt effect on Login Card
   const authView = document.getElementById('auth-view');
@@ -1342,31 +1367,6 @@
     setTimeout(() => t.classList.remove('show'), 3600);
   }
 
-  function validateGhanaPhoneClient(raw) {
-    let cleaned = String(raw || '').trim().replace(/[\s\-\(\)]+/g, '');
-    if (cleaned.startsWith('+233')) {
-      cleaned = '0' + cleaned.slice(4);
-    } else if (cleaned.startsWith('233') && cleaned.length === 12) {
-      cleaned = '0' + cleaned.slice(3);
-    }
-    return /^(024|054|055|059|020|050)\d{7}$/.test(cleaned) ? cleaned : null;
-  }
-
-  async function parseJsonSafely(res) {
-    const rawText = await res.text();
-    if (!rawText) {
-      return { ok: res.ok, error: `Server returned an empty response (HTTP ${res.status}).` };
-    }
-    try {
-      return JSON.parse(rawText);
-    } catch (parseErr) {
-      return {
-        ok: false,
-        error: `Unexpected server response (HTTP ${res.status}). Please try again.`
-      };
-    }
-  }
-
   function switchAuthMode(mode) {
     document.getElementById('tab-login-btn').classList.toggle('active', mode === 'login');
     document.getElementById('tab-reg-btn').classList.toggle('active', mode === 'register');
@@ -1376,24 +1376,10 @@
 
   async function handleRegister(e) {
     e.preventDefault();
-    const nameVal = (document.getElementById('reg-name').value || '').trim();
-    const rawPhone = (document.getElementById('reg-phone').value || '').trim();
-    const passwordVal = (document.getElementById('reg-password').value || '').trim();
-    const refVal = (document.getElementById('reg-ref').value || '').trim().toUpperCase();
-
-    if (!nameVal || !rawPhone || !passwordVal) {
-      showToast('Full name, phone number, and password are required.');
-      return;
-    }
-
-    const validPhone = validateGhanaPhoneClient(rawPhone);
-    if (!validPhone) {
-      showToast('Invalid phone number. Enter a valid 10-digit Ghana MTN (024, 054, 055, 059) or Telecel (020, 050) number.');
-      return;
-    }
-
-    if (passwordVal.length < 4) {
-      showToast('Password must be at least 4 characters.');
+    const rawPhone = document.getElementById('reg-phone').value;
+    const phoneCheck = validateGhanaPhone(rawPhone);
+    if (!phoneCheck.ok) {
+      showToast(phoneCheck.error);
       return;
     }
 
@@ -1405,24 +1391,23 @@
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
-          name: nameVal,
-          phone: validPhone,
-          password: passwordVal,
-          referral_code: refVal
+          name: document.getElementById('reg-name').value,
+          phone: phoneCheck.normalized,
+          password: document.getElementById('reg-password').value,
+          referral_code: document.getElementById('reg-ref').value
         })
       });
-      const data = await parseJsonSafely(res);
-      if (!res.ok || !data.ok) {
-        showToast(data.error || `Registration failed (HTTP ${res.status})`);
+      const data = await res.json();
+      if (!data.ok) {
+        showToast(data.error || 'Registration failed');
       } else {
-        showToast(data.message || 'Account created successfully! Please sign in.');
-        document.getElementById('login-phone').value = validPhone;
+        showToast(data.message);
+        document.getElementById('login-phone').value = phoneCheck.normalized;
         document.getElementById('register-form').reset();
         switchAuthMode('login');
       }
     } catch (err) {
-      console.error('Register fetch error:', err);
-      showToast('Network error while registering. Please check your connection and try again.');
+      showToast('Network error. Please try again.');
     } finally {
       btn.disabled = false;
       btn.textContent = 'Register Account';
@@ -1451,14 +1436,6 @@
 
   async function handleLogin(e) {
     e.preventDefault();
-    const rawPhone = (document.getElementById('login-phone').value || '').trim();
-    const passwordVal = (document.getElementById('login-password').value || '').trim();
-    if (!rawPhone || !passwordVal) {
-      showToast('Enter your phone number and password.');
-      return;
-    }
-
-    const phoneToSend = validateGhanaPhoneClient(rawPhone) || rawPhone;
     const btn = document.getElementById('login-submit-btn');
     btn.disabled = true;
     btn.textContent = 'Authenticating...';
@@ -1467,25 +1444,22 @@
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
-          phone: phoneToSend,
-          password: passwordVal
+          phone: document.getElementById('login-phone').value,
+          password: document.getElementById('login-password').value
         })
       });
-      const data = await parseJsonSafely(res);
-      if (!res.ok || !data.ok) {
-        showToast(data.error || `Login failed (HTTP ${res.status})`);
+      const data = await res.json();
+      if (!data.ok) {
+        showToast(data.error || 'Login failed');
       } else {
-        const stateLoaded = await loadUserState();
+        await loadUserState();
         document.getElementById('auth-view').style.display = 'none';
         document.getElementById('app-view').style.display = 'block';
-        playSparkleWelcome(data.user_name || (APP_STATE && APP_STATE.user && APP_STATE.user.name) || 'Investor');
-        if (stateLoaded) {
-          startChatPolling();
-        }
+        playSparkleWelcome(data.user_name);
+        startChatPolling();
       }
     } catch (err) {
-      console.error('Login fetch error:', err);
-      showToast('Connection error while signing in. Please try again.');
+      showToast('Connection error.');
     } finally {
       btn.disabled = false;
       btn.textContent = 'Access Portfolio';
@@ -1500,10 +1474,10 @@
     showToast('Signed out safely.');
   }
 
-  // Greeting Time Windows:
-  // Morning: 00:00 (12:00 AM) to 11:59 (11:59 AM)
-  // Afternoon: 12:00 (12:00 PM) to 16:59 (4:59 PM)
-  // Evening: 17:00 (5:00 PM) to 23:59 (11:59 PM)
+  // Time-of-Day Greeting Rules:
+  // 00:00 (12:00 AM) to 11:59 AM -> Morning
+  // 12:00 PM (12:00) to 16:59 (4:59 PM) -> Afternoon
+  // 17:00 (5:00 PM) to 23:59 (11:59 PM) -> Evening
   function getTimeGreeting(name) {
     const hr = new Date().getHours();
     if (hr >= 0 && hr <= 11) return `Good morning, ${name}`;
@@ -1512,43 +1486,36 @@
   }
 
   async function loadUserState() {
-    try {
-      const res = await fetch('/api/user/state');
-      if (res.status === 401 || res.status === 403) {
-        document.getElementById('auth-view').style.display = 'flex';
-        document.getElementById('app-view').style.display = 'none';
-        return false;
-      }
-      const data = await parseJsonSafely(res);
-      if (!res.ok || !data.ok) {
-        showToast(data.error || 'Could not load portfolio state.');
-        return false;
-      }
-      APP_STATE = data;
-      renderAllViews();
-      return true;
-    } catch (err) {
-      console.error('loadUserState error:', err);
+    const res = await fetch('/api/user/state');
+    if (res.status === 401 || res.status === 403) {
+      document.getElementById('auth-view').style.display = 'flex';
+      document.getElementById('app-view').style.display = 'none';
       return false;
     }
+    const data = await res.json();
+    if (!data.ok) return false;
+    APP_STATE = data;
+    renderAllViews();
+    return true;
   }
 
   function renderAllViews() {
     const u = APP_STATE.user;
-    const targetInvites = Number(APP_STATE.invite_target_count || 10);
-    const rewardAmount = Number(APP_STATE.invite_reward_amount || 2000);
-    const rewardFormatted = rewardAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-    const rewardShort = rewardAmount.toLocaleString('en-US');
+    const refCfg = APP_STATE.referral_config || { target_count: 10, reward_amount: 2000 };
+    const targetCount = Number(refCfg.target_count) || 10;
+    const rewardAmount = Number(refCfg.reward_amount) || 2000;
+    const rewardFmt = rewardAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const rewardShortFmt = rewardAmount.toLocaleString('en-US');
 
     document.getElementById('dynamic-greeting').textContent = getTimeGreeting(u.name);
     document.getElementById('home-vip-badge').textContent = u.vip_level_name;
-    document.getElementById('hero-milestone-headline').textContent = `Earn 10% Referral Bonus + GHS ${rewardShort} VIP 2 Milestone`;
     document.getElementById('product-wallet-val').textContent = `GHS ${u.product_wallet.toLocaleString('en-US', {minimumFractionDigits:2})}`;
     document.getElementById('earnings-wallet-val').textContent = `GHS ${u.earnings_wallet.toLocaleString('en-US', {minimumFractionDigits:2})}`;
     document.getElementById('home-min-w').textContent = `GHS ${APP_STATE.min_withdrawal.toLocaleString('en-US', {minimumFractionDigits:2})}`;
     document.getElementById('drawer-min-w').textContent = `GHS ${APP_STATE.min_withdrawal.toLocaleString('en-US', {minimumFractionDigits:2})}`;
     document.getElementById('withdraw-number').value = u.phone;
     document.getElementById('withdraw-acc-name').value = u.name;
+    document.getElementById('hero-milestone-banner').textContent = `Earn 10% Referral Bonus + GHS ${rewardShortFmt} VIP 2 Milestone`;
 
     // Announcements
     const newsBox = document.getElementById('news-list');
@@ -1559,12 +1526,12 @@
       </div>
     `).join('');
 
-    // Earn Tab Status (Calendar-day reset at 00:00 midnight)
+    // Earn Tab Status
     const claimBtn = document.getElementById('claim-daily-btn');
     if (APP_STATE.active_tier) {
       const expDate = new Date(u.vip_expires_at * 1000).toLocaleDateString();
       document.getElementById('earn-active-vip').textContent = `${APP_STATE.active_tier.name} — GHS ${APP_STATE.active_tier.daily_profit}/day`;
-      document.getElementById('earn-expiry-text').textContent = `Contract valid until ${expDate}. Resets daily at 00:00 midnight (GMT).`;
+      document.getElementById('earn-expiry-text').textContent = `Contract valid until ${expDate}. Renew after ${APP_STATE.active_tier.duration_days} days to continue daily claims.`;
       if (APP_STATE.can_claim_daily) {
         claimBtn.disabled = false;
         claimBtn.textContent = `Claim GHS ${APP_STATE.active_tier.daily_profit} Now`;
@@ -1603,32 +1570,31 @@
       `;
     }).join('');
 
-    // Get Hired Tab (Dynamic Configurable Milestone & Reward)
-    document.getElementById('hired-hero-headline').textContent = `Get ${targetInvites} users to buy shares in VIP 2 (GHS 600) and receive GHS ${rewardShort} instantly!`;
-    document.getElementById('my-invite-code-box').value = u.invite_code;
-    const count = Math.min(targetInvites, u.vip2_invites_count);
-    document.getElementById('vip2-progress-label').textContent = `${u.vip2_invites_count} / ${targetInvites}`;
-    document.getElementById('vip2-progress-bar').style.width = `${Math.min(100, (count / Math.max(1, targetInvites)) * 100)}%`;
-    const vip2Btn = document.getElementById('claim-vip2-bonus-btn');
-    if (u.vip2_bonus_claimed === 1) {
-      vip2Btn.disabled = true;
-      vip2Btn.textContent = `GHS ${rewardShort} Milestone Bonus Claimed ✓`;
-    } else if (u.vip2_invites_count >= targetInvites) {
-      vip2Btn.disabled = false;
-      vip2Btn.textContent = `Claim GHS ${rewardFormatted} Instantly!`;
-    } else {
-      vip2Btn.disabled = true;
-      const remaining = targetInvites - u.vip2_invites_count;
-      vip2Btn.textContent = `Invite ${remaining} More VIP 2 User${remaining === 1 ? '' : 's'} to Unlock GHS ${rewardShort}`;
-    }
-
+    // Get Hired Tab (Dynamic Target & Reward from Admin)
+    document.getElementById('hired-headline').textContent = `Get ${targetCount} users to buy shares in VIP 2 (GHS 600) and receive GHS ${rewardShortFmt} instantly!`;
     document.getElementById('hired-instructions-box').innerHTML = `
       <strong>How Instructions Work:</strong><br>
       1. Copy your unique invitation code above and share it with prospective investors.<br>
       2. Instruct them to register on TravestCapital and open the <strong>Earn</strong> tab to buy <strong>VIP 2</strong> shares.<br>
       3. On the VIP 2 checkout screen, they must enter your unique code before completing payment.<br>
-      4. Once ${targetInvites} user${targetInvites === 1 ? '' : 's'} complete VIP 2 with your code, tap <strong>Claim GHS ${rewardShort}</strong> to credit your Earnings Wallet immediately.
+      4. Once ${targetCount} users complete VIP 2 with your code, tap <strong>Claim GHS ${rewardShortFmt}</strong> to credit your Earnings Wallet immediately.
     `;
+
+    document.getElementById('my-invite-code-box').value = u.invite_code;
+    const count = Math.min(targetCount, u.vip2_invites_count);
+    document.getElementById('vip2-progress-label').textContent = `${u.vip2_invites_count} / ${targetCount}`;
+    document.getElementById('vip2-progress-bar').style.width = `${(count / targetCount) * 100}%`;
+    const vip2Btn = document.getElementById('claim-vip2-bonus-btn');
+    if (u.vip2_bonus_claimed === 1) {
+      vip2Btn.disabled = true;
+      vip2Btn.textContent = `GHS ${rewardShortFmt} Milestone Bonus Claimed ✓`;
+    } else if (u.vip2_invites_count >= targetCount) {
+      vip2Btn.disabled = false;
+      vip2Btn.textContent = `Claim GHS ${rewardFmt} Instantly!`;
+    } else {
+      vip2Btn.disabled = true;
+      vip2Btn.textContent = `Invite ${targetCount - u.vip2_invites_count} More VIP 2 Users to Unlock GHS ${rewardShortFmt}`;
+    }
 
     // Spin Vault Devices
     const devGrid = document.getElementById('spin-devices-grid');
@@ -1647,7 +1613,7 @@
             <div>
               <h3 style="font-family:'Space Grotesk',sans-serif; font-size:18px; color:var(--brand-navy);">${escapeHtml(d.name)}</h3>
               <p style="font-size:13px; color:var(--ink-muted); margin-top:4px;">${escapeHtml(d.specs)}</p>
-              ${!isFree ? `<div style="margin-top:8px; font-size:13px; font-weight:700; color:var(--brand-blue);">Retail Value: <span style="text-decoration:line-through; color:var(--ink-light);">GHS ${d.original_price.toLocaleString()}</span> → Spin for Discount!</div>` : '<div style="margin-top:8px; font-size:12.5px; font-weight:700; color:#b45309;">Only active VIP 2 shareholders can spin for free (resets 00:00)</div>'}
+              ${!isFree ? `<div style="margin-top:8px; font-size:13px; font-weight:700; color:var(--brand-blue);">Retail Value: <span style="text-decoration:line-through; color:var(--ink-light);">GHS ${d.original_price.toLocaleString()}</span> → Spin for Discount!</div>` : '<div style="margin-top:8px; font-size:12.5px; font-weight:700; color:#b45309;">Only active VIP 2 shareholders can spin for free</div>'}
             </div>
             <button class="btn-primary-3d" style="margin-top:14px;" onclick='openSpinModal(${JSON.stringify(d)})'>
               Spin Wheel Now
@@ -1673,25 +1639,58 @@
       `).join('');
     }
 
-    // Mine Tab
+    // Mine Tab + About Company
     document.getElementById('mine-user-name').textContent = u.name;
     document.getElementById('mine-user-phone').textContent = u.phone;
     document.getElementById('mine-vip-badge').textContent = u.vip_level_name;
     document.getElementById('mine-invite-code').textContent = u.invite_code;
 
-    // About Company Content
     const about = APP_STATE.about_company || {};
-    const aboutTextEl = document.getElementById('about-company-text-display');
-    const aboutMediaEl = document.getElementById('about-company-media-display');
-    aboutTextEl.textContent = about.text || 'TravestCapital (TC) is an institutional wealth and equity platform.';
-    let mediaHtml = '';
-    if (about.image_url) {
-      mediaHtml += `<img src="${escapeHtml(about.image_url)}" alt="About TravestCapital" style="width:100%; border-radius:12px; max-height:280px; object-fit:cover; border:1px solid var(--border);" />`;
+    document.getElementById('about-company-text-display').textContent =
+      about.text || 'TravestCapital (TC) is an institutional equity and digital asset yield portal.';
+    const mediaWrap = document.getElementById('about-company-media-wrap');
+    mediaWrap.innerHTML = '';
+    let hasAboutMedia = false;
+
+    if (about.image_url && about.image_url.trim()) {
+      hasAboutMedia = true;
+      const img = document.createElement('img');
+      img.src = about.image_url.trim();
+      img.alt = 'TravestCapital Company';
+      img.style.width = '100%';
+      img.style.maxHeight = '320px';
+      img.style.objectFit = 'cover';
+      img.style.borderRadius = '14px';
+      img.style.border = '1px solid var(--border)';
+      mediaWrap.appendChild(img);
     }
-    if (about.video_url) {
-      mediaHtml += `<video src="${escapeHtml(about.video_url)}" controls playsinline style="width:100%; border-radius:12px; max-height:280px; background:#000;"></video>`;
+
+    if (about.video_url && about.video_url.trim()) {
+      hasAboutMedia = true;
+      const vUrl = about.video_url.trim();
+      const ytMatch = vUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{6,})/);
+      if (ytMatch) {
+        const iframe = document.createElement('iframe');
+        iframe.src = `https://www.youtube.com/embed/${ytMatch[1]}`;
+        iframe.style.width = '100%';
+        iframe.style.height = '240px';
+        iframe.style.border = 'none';
+        iframe.style.borderRadius = '14px';
+        iframe.allowFullscreen = true;
+        mediaWrap.appendChild(iframe);
+      } else {
+        const video = document.createElement('video');
+        video.src = vUrl;
+        video.controls = true;
+        video.playsInline = true;
+        video.style.width = '100%';
+        video.style.maxHeight = '320px';
+        video.style.borderRadius = '14px';
+        video.style.background = '#0a192f';
+        mediaWrap.appendChild(video);
+      }
     }
-    aboutMediaEl.innerHTML = mediaHtml;
+    mediaWrap.style.display = hasAboutMedia ? 'flex' : 'none';
 
     const txBox = document.getElementById('user-tx-list');
     txBox.innerHTML = APP_STATE.transactions.length ? APP_STATE.transactions.map(tx => {
@@ -1905,7 +1904,7 @@
     SPIN_RESULT_DATA = null;
     document.getElementById('wheel-device-title').textContent = device.name;
     document.getElementById('wheel-subtitle').textContent = device.spin_type === 'free'
-      ? 'VIP 2 Exclusive Free Spin (3 WIN / 3 LOST)'
+      ? 'VIP 2 Exclusive Free Spin (Resets Daily at 00:00)'
       : 'Discount Spin — Win a Massive Discount & Checkout via Paystack';
     document.getElementById('spin-outcome-box').style.display = 'none';
     document.getElementById('spin-delivery-form').style.display = 'none';
@@ -2004,7 +2003,7 @@
         } else {
           head.textContent = 'Result: LOST';
           head.style.color = '#dc2626';
-          desc.textContent = 'Better luck next time! Free spins reset daily at 00:00 midnight.';
+          desc.textContent = 'Better luck next time! Your free daily spin resets at 00:00.';
           form.style.display = 'none';
         }
         loadUserState();
@@ -2038,8 +2037,8 @@
           spin_type: 'free',
           amount_paid: 0,
           recipient_phone: phone,
-          region,
-          address
+          region: region,
+          address: address
         })
       });
       const data = await res.json();
@@ -2049,20 +2048,20 @@
         loadUserState();
       }
     } else {
-      const price = SPIN_RESULT_DATA.discounted_price;
-      const email = `${APP_STATE.user.phone}@travestcapital.com`;
-      launchPaystack(price, email, async (ref) => {
+      const amt = SPIN_RESULT_DATA.discounted_price;
+      const userEmail = `${APP_STATE.user.phone}@travestcapital.com`;
+      launchPaystack(amt, userEmail, async (ref) => {
         const res = await fetch('/api/user/spin-claim', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
             device_id: ACTIVE_SPIN_DEVICE.id,
             spin_type: 'sale',
-            amount_paid: price,
+            amount_paid: amt,
             paystack_ref: ref,
             recipient_phone: phone,
-            region,
-            address
+            region: region,
+            address: address
           })
         });
         const data = await res.json();
@@ -2075,15 +2074,14 @@
     }
   }
 
-  // Mine Tab Actions
+  // Mine Tab Account Actions
   async function submitResetPassword() {
+    const old_password = document.getElementById('mine-old-pw').value;
+    const new_password = document.getElementById('mine-new-pw').value;
     const res = await fetch('/api/user/reset-password', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        old_password: document.getElementById('mine-old-pw').value,
-        new_password: document.getElementById('mine-new-pw').value
-      })
+      body: JSON.stringify({ old_password, new_password })
     });
     const data = await res.json();
     showToast(data.message || data.error);
@@ -2095,18 +2093,17 @@
   }
 
   async function submitChangePhone() {
-    const validPhone = validateGhanaPhoneClient(document.getElementById('mine-new-phone').value);
-    if (!validPhone) {
-      showToast('Invalid phone number. Enter a valid 10-digit Ghana MTN (024, 054, 055, 059) or Telecel (020, 050) number.');
+    const rawNewPhone = document.getElementById('mine-new-phone').value;
+    const phoneCheck = validateGhanaPhone(rawNewPhone);
+    if (!phoneCheck.ok) {
+      showToast(phoneCheck.error);
       return;
     }
+    const password = document.getElementById('mine-phone-pw').value;
     const res = await fetch('/api/user/change-phone', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        new_phone: validPhone,
-        password: document.getElementById('mine-phone-pw').value
-      })
+      body: JSON.stringify({ new_phone: phoneCheck.normalized, password })
     });
     const data = await res.json();
     showToast(data.message || data.error);
@@ -2118,50 +2115,46 @@
     }
   }
 
-  // Real-Time Instant Live Chat (with deduplication guard so messages never send or render twice)
+  // Real-Time Live Support Chat (Deduplicated single-render guarantee)
+  function toggleChatDrawer() {
+    const drawer = document.getElementById('user-chat-drawer');
+    drawer.classList.toggle('open');
+    if (drawer.classList.contains('open')) pollUserChat();
+  }
+
   function appendUserChatBubble(m) {
-    const box = document.getElementById('user-chat-messages');
-    if (document.getElementById(`user-chat-msg-${m.id}`)) return;
+    if (!m || !m.id || RENDERED_USER_MSG_IDS.has(m.id)) return;
+    RENDERED_USER_MSG_IDS.add(m.id);
     if (m.id > LAST_CHAT_ID) LAST_CHAT_ID = m.id;
+    const box = document.getElementById('user-chat-messages');
     const div = document.createElement('div');
-    div.id = `user-chat-msg-${m.id}`;
     div.className = 'msg-bubble ' + (m.sender === 'user' ? 'msg-user' : 'msg-admin');
     div.textContent = m.message;
     box.appendChild(div);
     box.scrollTop = box.scrollHeight;
   }
 
-  function toggleChatDrawer() {
-    const drawer = document.getElementById('user-chat-drawer');
-    drawer.classList.toggle('open');
-    if (drawer.classList.contains('open')) {
-      fetchNewChatMessages();
-    }
-  }
-
-  async function fetchNewChatMessages() {
-    if (IS_POLLING_USER_CHAT) return;
-    IS_POLLING_USER_CHAT = true;
+  async function pollUserChat() {
+    if (!APP_STATE) return;
     try {
       const res = await fetch(`/api/chat/messages?after_id=${LAST_CHAT_ID}`);
-      if (!res.ok) return;
       const data = await res.json();
       if (data.ok && data.messages.length > 0) {
         data.messages.forEach(m => appendUserChatBubble(m));
       }
-    } catch (e) {
-    } finally {
-      IS_POLLING_USER_CHAT = false;
-    }
+    } catch (e) {}
   }
 
   async function sendUserChat(e) {
     e.preventDefault();
-    if (IS_SENDING_USER_CHAT) return;
+    if (USER_SENDING_CHAT) return;
     const inp = document.getElementById('user-chat-input');
+    const btn = document.getElementById('user-chat-send-btn');
     const msg = inp.value.trim();
     if (!msg) return;
-    IS_SENDING_USER_CHAT = true;
+
+    USER_SENDING_CHAT = true;
+    btn.disabled = true;
     inp.value = '';
     try {
       const res = await fetch('/api/chat/send', {
@@ -2170,22 +2163,21 @@
         body: JSON.stringify({ message: msg })
       });
       const data = await res.json();
-      if (data.ok && data.message && data.message.id) {
+      if (data.ok && data.message) {
         appendUserChatBubble(data.message);
-      } else if (data.ok) {
-        await fetchNewChatMessages();
+      } else if (data.error) {
+        showToast(data.error);
       }
     } finally {
-      IS_SENDING_USER_CHAT = false;
+      USER_SENDING_CHAT = false;
+      btn.disabled = false;
     }
   }
 
   function startChatPolling() {
-    LAST_CHAT_ID = 0;
-    document.getElementById('user-chat-messages').innerHTML = '';
-    fetchNewChatMessages();
+    pollUserChat();
     if (CHAT_POLL_TIMER) clearInterval(CHAT_POLL_TIMER);
-    CHAT_POLL_TIMER = setInterval(fetchNewChatMessages, 1500);
+    CHAT_POLL_TIMER = setInterval(pollUserChat, 2000);
   }
 
   function escapeHtml(str) {
@@ -2193,7 +2185,7 @@
   }
 
   // Boot check
-  (async function init() {
+  (async function boot() {
     initWithdrawalTicker();
     const loggedIn = await loadUserState();
     if (loggedIn) {
