@@ -6,12 +6,16 @@ import time
 import random
 import string
 import json
+import logging
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from flask import Flask, render_template, request, jsonify, session, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from supabase import create_client, Client
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("travestcapital.auth")
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 app.secret_key = os.environ.get('SECRET_KEY', 'travest_capital_prod_secret_key_2026_x99')
@@ -58,9 +62,18 @@ def seconds_until_midnight(ts=None):
 
 
 def normalize_and_validate_ghana_phone(raw_phone):
-    if not raw_phone:
+    if raw_phone is None:
         return None
-    cleaned = re.sub(r'[\s\-\(\)]+', '', str(raw_phone).strip())
+    if isinstance(raw_phone, (dict, list, tuple, set, bool)):
+        return None
+    try:
+        raw_str = str(raw_phone).strip()
+    except Exception:
+        return None
+    if not raw_str:
+        return None
+
+    cleaned = re.sub(r'[\s\-\(\)]+', '', raw_str)
     if cleaned.startswith('+233'):
         cleaned = '0' + cleaned[4:]
     elif cleaned.startswith('233') and len(cleaned) == 12:
@@ -71,6 +84,31 @@ def normalize_and_validate_ghana_phone(raw_phone):
     if not re.fullmatch(r'^(024|054|055|059|020|050)\d{7}$', cleaned):
         return None
     return cleaned
+
+
+def _parse_json_body():
+    """Safely parse JSON or form payloads without raising HTTP 400/500 on malformed bodies."""
+    try:
+        data = request.get_json(silent=True)
+    except Exception:
+        data = None
+    if isinstance(data, dict):
+        return data
+    if request.form:
+        try:
+            return dict(request.form)
+        except Exception:
+            return {}
+    return {}
+
+
+def _safe_str(val):
+    if val is None or isinstance(val, (dict, list, tuple, set, bool)):
+        return ''
+    try:
+        return str(val).strip()
+    except Exception:
+        return ''
 
 
 def generate_invite_code():
@@ -197,93 +235,167 @@ def serve_upload(filename):
 # ==============================================================================
 @app.route('/api/register', methods=['POST'])
 def api_register():
-    data = request.get_json(force=True)
-    name = (data.get('name') or '').strip()
-    raw_phone = (data.get('phone') or '').strip()
-    password = (data.get('password') or '').strip()
-    referral_code = (data.get('referral_code') or '').strip().upper()
+    try:
+        data = _parse_json_body()
+        name = _safe_str(data.get('name'))
+        raw_phone = _safe_str(data.get('phone'))
+        raw_password = data.get('password')
+        password = raw_password.strip() if isinstance(raw_password, str) else ''
+        referral_code = (
+            _safe_str(data.get('referral_code'))
+            or _safe_str(data.get('ref_code'))
+            or _safe_str(data.get('invite_code'))
+        ).upper()
 
-    if not name or not raw_phone or not password:
-        return jsonify({'ok': False, 'error': 'Full name, phone number, and password are required.'}), 400
+        if not name or not raw_phone or not password:
+            return jsonify({'ok': False, 'error': 'Full name, phone number, and password are required.'}), 400
 
-    phone = normalize_and_validate_ghana_phone(raw_phone)
-    if not phone:
-        return jsonify({
-            'ok': False,
-            'error': 'Invalid phone number. Enter a valid 10-digit Ghana MTN (024, 054, 055, 059) or Telecel (020, 050) number.'
-        }), 400
+        phone = normalize_and_validate_ghana_phone(raw_phone)
+        if not phone:
+            return jsonify({
+                'ok': False,
+                'error': 'Invalid phone number. Enter a valid 10-digit Ghana MTN (024, 054, 055, 059) or Telecel (020, 050) number.'
+            }), 400
 
-    if len(password) < 4:
-        return jsonify({'ok': False, 'error': 'Password must be at least 4 characters.'}), 400
+        if len(password) < 4:
+            return jsonify({'ok': False, 'error': 'Password must be at least 4 characters.'}), 400
 
-    existing_res = supabase.table('users').select('id').eq('phone', phone).limit(1).execute()
-    if existing_res.data:
-        return jsonify({'ok': False, 'error': 'This phone number is already registered.'}), 400
+        try:
+            existing_res = supabase.table('users').select('id').eq('phone', phone).limit(1).execute()
+        except Exception as db_err:
+            logger.exception("Supabase phone lookup error during registration for %s: %s", phone, db_err)
+            return jsonify({'ok': False, 'error': 'Unable to verify phone number right now. Please try again.'}), 500
 
-    valid_ref = None
-    if referral_code:
-        ref_res = supabase.table('users').select('invite_code').eq('invite_code', referral_code).limit(1).execute()
-        if not ref_res.data:
-            return jsonify({'ok': False, 'error': 'Invalid referral code. Leave blank if none.'}), 400
-        valid_ref = ref_res.data[0]['invite_code']
+        if existing_res and existing_res.data:
+            return jsonify({'ok': False, 'error': 'This phone number is already registered.'}), 400
 
-    invite_code = generate_invite_code()
-    while supabase.table('users').select('id').eq('invite_code', invite_code).limit(1).execute().data:
+        valid_ref = None
+        if referral_code:
+            try:
+                ref_res = supabase.table('users').select('invite_code').eq('invite_code', referral_code).limit(1).execute()
+            except Exception as ref_err:
+                logger.exception("Supabase referral lookup error during registration for code %s: %s", referral_code, ref_err)
+                return jsonify({'ok': False, 'error': 'Unable to verify referral code right now. Please try again.'}), 500
+
+            if not ref_res or not ref_res.data:
+                return jsonify({'ok': False, 'error': 'Invalid referral code. Leave blank if none.'}), 400
+            valid_ref = _safe_str(ref_res.data[0].get('invite_code')) or referral_code
+
         invite_code = generate_invite_code()
+        for _ in range(15):
+            try:
+                dup_code = supabase.table('users').select('id').eq('invite_code', invite_code).limit(1).execute()
+                if not (dup_code and dup_code.data):
+                    break
+            except Exception as code_err:
+                logger.warning("Invite code uniqueness check warning: %s", code_err)
+                break
+            invite_code = generate_invite_code()
 
-    pw_hash = generate_password_hash(password)
-    now = int(time.time())
+        try:
+            pw_hash = generate_password_hash(password)
+        except Exception as hash_err:
+            logger.exception("Password hashing error during registration: %s", hash_err)
+            return jsonify({'ok': False, 'error': 'Could not process password securely. Please try again.'}), 400
 
-    user_data = {
-        'name': name,
-        'phone': phone,
-        'password_hash': pw_hash,
-        'invite_code': invite_code,
-        'referred_by_code': valid_ref,
-        'referral_reward_paid': 0,
-        'product_wallet': 0.0,
-        'earnings_wallet': 0.0,
-        'vip_level_id': 0,
-        'vip_level_name': 'Starter',
-        'vip_expires_at': 0,
-        'last_claim_at': 0,
-        'last_claim_date': '',
-        'vip2_invites_count': 0,
-        'vip2_bonus_claimed': 0,
-        'last_free_spin_at': 0,
-        'last_free_spin_date': '',
-        'is_active': 1,
-        'created_at': now
-    }
-    supabase.table('users').insert(user_data).execute()
-    return jsonify({'ok': True, 'message': 'Account created successfully! Please sign in.'})
+        now = int(time.time())
+        user_data = {
+            'name': name,
+            'phone': phone,
+            'password_hash': pw_hash,
+            'invite_code': invite_code,
+            'referred_by_code': valid_ref,
+            'referral_reward_paid': 0,
+            'product_wallet': 0.0,
+            'earnings_wallet': 0.0,
+            'vip_level_id': 0,
+            'vip_level_name': 'Starter',
+            'vip_expires_at': 0,
+            'last_claim_at': 0,
+            'last_claim_date': '',
+            'vip2_invites_count': 0,
+            'vip2_bonus_claimed': 0,
+            'last_free_spin_at': 0,
+            'last_free_spin_date': '',
+            'is_active': 1,
+            'created_at': now
+        }
+
+        try:
+            insert_res = supabase.table('users').insert(user_data).execute()
+        except Exception as insert_err:
+            logger.exception("Supabase user insert error during registration for %s: %s", phone, insert_err)
+            err_msg = str(insert_err).lower()
+            if 'duplicate' in err_msg or 'unique' in err_msg:
+                return jsonify({'ok': False, 'error': 'This phone number or account already exists.'}), 400
+            return jsonify({'ok': False, 'error': 'Failed to create account due to a database error. Please try again.'}), 500
+
+        if insert_res is None or (hasattr(insert_res, 'data') and insert_res.data is None):
+            logger.error("Supabase user insert returned empty/null response for %s", phone)
+            return jsonify({'ok': False, 'error': 'Account creation could not be confirmed. Please try again.'}), 500
+
+        return jsonify({'ok': True, 'message': 'Account created successfully! Please sign in.'})
+    except Exception as exc:
+        logger.exception("Unhandled error in /api/register: %s", exc)
+        return jsonify({'ok': False, 'error': 'An unexpected error occurred while creating your account.'}), 500
 
 
 @app.route('/api/login', methods=['POST'])
 def api_login():
-    data = request.get_json(force=True)
-    raw_phone = (data.get('phone') or '').strip()
-    password = (data.get('password') or '').strip()
+    try:
+        data = _parse_json_body()
+        raw_phone = _safe_str(data.get('phone'))
+        raw_password = data.get('password')
+        password = raw_password.strip() if isinstance(raw_password, str) else ''
 
-    if not raw_phone or not password:
-        return jsonify({'ok': False, 'error': 'Enter your phone number and password.'}), 400
+        if not raw_phone or not password:
+            return jsonify({'ok': False, 'error': 'Enter your phone number and password.'}), 400
 
-    normalized = normalize_and_validate_ghana_phone(raw_phone) or raw_phone
-    res = supabase.table('users').select('*').eq('phone', normalized).limit(1).execute()
-    if not res.data and normalized != raw_phone:
-        res = supabase.table('users').select('*').eq('phone', raw_phone).limit(1).execute()
-    if not res.data:
-        return jsonify({'ok': False, 'error': 'Invalid phone number or password.'}), 401
+        normalized = normalize_and_validate_ghana_phone(raw_phone)
+        res = None
+        try:
+            if normalized:
+                res = supabase.table('users').select('*').eq('phone', normalized).limit(1).execute()
+            if not (res and res.data) and raw_phone != normalized:
+                res = supabase.table('users').select('*').eq('phone', raw_phone).limit(1).execute()
+        except Exception as db_err:
+            logger.exception("Supabase lookup error during login for %s: %s", raw_phone, db_err)
+            return jsonify({'ok': False, 'error': 'Unable to verify credentials right now. Please try again.'}), 500
 
-    user = res.data[0]
-    if not check_password_hash(user['password_hash'], password):
-        return jsonify({'ok': False, 'error': 'Invalid phone number or password.'}), 401
+        rows = res.data if (res and res.data) else []
+        if not rows:
+            return jsonify({'ok': False, 'error': 'Invalid phone number or password.'}), 401
 
-    if user.get('is_active', 1) == 0:
-        return jsonify({'ok': False, 'error': 'Account deactivated. Contact Support.'}), 403
+        user = rows[0] if isinstance(rows[0], dict) else {}
+        pw_hash = _safe_str(user.get('password_hash'))
+        if not pw_hash:
+            logger.error("User record %s missing password_hash", user.get('id'))
+            return jsonify({'ok': False, 'error': 'Account credential data is incomplete. Contact Support.'}), 401
 
-    session['user_id'] = user['id']
-    return jsonify({'ok': True, 'user_name': user['name']})
+        try:
+            password_ok = check_password_hash(pw_hash, password)
+        except Exception as pw_err:
+            logger.exception("Password hash check error for user %s: %s", user.get('id'), pw_err)
+            return jsonify({'ok': False, 'error': 'Invalid phone number or password.'}), 401
+
+        if not password_ok:
+            return jsonify({'ok': False, 'error': 'Invalid phone number or password.'}), 401
+
+        is_active = user.get('is_active', 1)
+        if is_active == 0 or str(is_active).lower() in ('false', '0'):
+            return jsonify({'ok': False, 'error': 'Account deactivated. Contact Support.'}), 403
+
+        user_id = user.get('id')
+        if user_id is None:
+            logger.error("Authenticated user missing id field")
+            return jsonify({'ok': False, 'error': 'Account profile is missing an identifier.'}), 500
+
+        session['user_id'] = user_id
+        user_name = _safe_str(user.get('name')) or 'Investor'
+        return jsonify({'ok': True, 'user_name': user_name})
+    except Exception as exc:
+        logger.exception("Unhandled error in /api/login: %s", exc)
+        return jsonify({'ok': False, 'error': 'An unexpected error occurred during sign in.'}), 500
 
 
 @app.route('/api/logout', methods=['POST'])
@@ -808,25 +920,30 @@ def api_user_reset_password(user):
 @app.route('/api/user/change-phone', methods=['POST'])
 @login_required
 def api_user_change_phone(user):
-    data = request.get_json(force=True)
-    raw_new_phone = (data.get('new_phone') or '').strip()
-    password = (data.get('password') or '').strip()
+    try:
+        data = _parse_json_body()
+        raw_new_phone = _safe_str(data.get('new_phone'))
+        raw_password = data.get('password')
+        password = raw_password.strip() if isinstance(raw_password, str) else ''
 
-    new_phone = normalize_and_validate_ghana_phone(raw_new_phone)
-    if not new_phone:
-        return jsonify({
-            'ok': False,
-            'error': 'Invalid phone number. Enter a valid 10-digit Ghana MTN (024, 054, 055, 059) or Telecel (020, 050) number.'
-        }), 400
-    if not check_password_hash(user['password_hash'], password):
-        return jsonify({'ok': False, 'error': 'Password verification failed.'}), 400
+        new_phone = normalize_and_validate_ghana_phone(raw_new_phone)
+        if not new_phone:
+            return jsonify({
+                'ok': False,
+                'error': 'Invalid phone number. Enter a valid 10-digit Ghana MTN (024, 054, 055, 059) or Telecel (020, 050) number.'
+            }), 400
+        if not password or not check_password_hash(_safe_str(user.get('password_hash')), password):
+            return jsonify({'ok': False, 'error': 'Password verification failed.'}), 400
 
-    existing_docs = supabase.table('users').select('id').eq('phone', new_phone).execute().data or []
-    if any(d['id'] != user['id'] for d in existing_docs):
-        return jsonify({'ok': False, 'error': 'Phone number already in use by another account.'}), 400
+        existing_docs = supabase.table('users').select('id').eq('phone', new_phone).execute().data or []
+        if any(d.get('id') != user.get('id') for d in existing_docs):
+            return jsonify({'ok': False, 'error': 'Phone number already in use by another account.'}), 400
 
-    supabase.table('users').update({'phone': new_phone}).eq('id', user['id']).execute()
-    return jsonify({'ok': True, 'message': 'Phone number updated successfully!'})
+        supabase.table('users').update({'phone': new_phone}).eq('id', user['id']).execute()
+        return jsonify({'ok': True, 'message': 'Phone number updated successfully!'})
+    except Exception as exc:
+        logger.exception("Error in /api/user/change-phone: %s", exc)
+        return jsonify({'ok': False, 'error': 'Could not update phone number right now.'}), 500
 
 
 # ==============================================================================
