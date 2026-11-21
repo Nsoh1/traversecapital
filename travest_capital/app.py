@@ -5,6 +5,8 @@ import time
 import random
 import string
 import json
+import urllib.request
+import urllib.error
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from functools import wraps
@@ -31,6 +33,51 @@ if os.environ.get('RENDER') or os.environ.get('FLASK_ENV') == 'production':
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+SUPABASE_URL = (os.environ.get('SUPABASE_URL') or '').strip().rstrip('/')
+SUPABASE_SERVICE_ROLE_KEY = (
+    os.environ.get('SUPABASE_SERVICE_ROLE_KEY')
+    or os.environ.get('SUPABASE_KEY')
+    or os.environ.get('SUPABASE_ANON_KEY')
+    or ''
+).strip()
+SUPABASE_STORAGE_BUCKET = (os.environ.get('SUPABASE_STORAGE_BUCKET') or 'uploads').strip()
+
+
+def upload_file_to_supabase(file_storage, prefix_name, ext):
+    """
+    Uploads a Werkzeug FileStorage object directly to Supabase Storage and returns its public URL.
+    Falls back to local disk only if SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is not configured.
+    """
+    fname = f'{prefix_name}_{uuid.uuid4().hex[:12]}{ext}'
+    if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
+        file_storage.save(os.path.join(UPLOAD_FOLDER, fname))
+        return f'/static/uploads/{fname}'
+
+    file_bytes = file_storage.read()
+    content_type = file_storage.mimetype or 'application/octet-stream'
+    upload_endpoint = f'{SUPABASE_URL}/storage/v1/object/{SUPABASE_STORAGE_BUCKET}/{fname}'
+
+    req = urllib.request.Request(
+        upload_endpoint,
+        data=file_bytes,
+        method='POST',
+        headers={
+            'Authorization': f'Bearer {SUPABASE_SERVICE_ROLE_KEY}',
+            'apikey': SUPABASE_SERVICE_ROLE_KEY,
+            'Content-Type': content_type,
+            'x-upsert': 'true',
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            if resp.status not in (200, 201):
+                raise RuntimeError(f'Supabase upload failed with status {resp.status}')
+    except urllib.error.HTTPError as e:
+        err_body = e.read().decode('utf-8', errors='ignore')
+        raise RuntimeError(f'Supabase Storage upload error ({e.code}): {err_body}')
+
+    return f'{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_STORAGE_BUCKET}/{fname}'
 
 # ==============================================================================
 # TIMEZONE CONFIGURATION (Consistent Daily 00:00 Reset in Africa/Accra GMT+0)
@@ -1605,9 +1652,10 @@ def api_admin_device_add(db):
             ext = os.path.splitext(secure_filename(f.filename))[1].lower()
             if ext not in ['.png', '.jpg', '.jpeg', '.webp', '.gif']:
                 return jsonify({'ok': False, 'error': 'Unsupported image format. Use PNG, JPG, or WEBP.'}), 400
-            fname = f'dev_{uuid.uuid4().hex[:12]}{ext}'
-            f.save(os.path.join(UPLOAD_FOLDER, fname))
-            image_url = f'/static/uploads/{fname}'
+            try:
+                image_url = upload_file_to_supabase(f, 'dev', ext)
+            except Exception as e:
+                return jsonify({'ok': False, 'error': str(e)}), 500
 
     db.add(SpinDevice(
         name=name,
@@ -1743,9 +1791,10 @@ def api_admin_about_save(db):
                 ext = os.path.splitext(secure_filename(img_f.filename))[1].lower()
                 if ext not in ['.png', '.jpg', '.jpeg', '.webp', '.gif']:
                     return jsonify({'ok': False, 'error': 'Unsupported image format. Use PNG, JPG, WEBP, or GIF.'}), 400
-                fname = f'about_img_{uuid.uuid4().hex[:12]}{ext}'
-                img_f.save(os.path.join(UPLOAD_FOLDER, fname))
-                image_url = f'/static/uploads/{fname}'
+                try:
+                    image_url = upload_file_to_supabase(img_f, 'about_img', ext)
+                except Exception as e:
+                    return jsonify({'ok': False, 'error': str(e)}), 500
 
         if 'video_file' in request.files:
             vid_f = request.files['video_file']
@@ -1753,9 +1802,10 @@ def api_admin_about_save(db):
                 ext = os.path.splitext(secure_filename(vid_f.filename))[1].lower()
                 if ext not in ['.mp4', '.webm', '.ogg', '.mov']:
                     return jsonify({'ok': False, 'error': 'Unsupported video format. Use MP4, WEBM, or OGG.'}), 400
-                fname = f'about_vid_{uuid.uuid4().hex[:12]}{ext}'
-                vid_f.save(os.path.join(UPLOAD_FOLDER, fname))
-                video_url = f'/static/uploads/{fname}'
+                try:
+                    video_url = upload_file_to_supabase(vid_f, 'about_vid', ext)
+                except Exception as e:
+                    return jsonify({'ok': False, 'error': str(e)}), 500
     else:
         data = request.get_json(force=True)
         about_text = (data.get('text') or '').strip()
