@@ -208,6 +208,31 @@
     box-shadow: 0 0 0 4px rgba(29, 78, 216, 0.1);
   }
 
+  .password-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .password-input-wrap .input-3d {
+    padding-right: 44px;
+  }
+  .toggle-password-btn {
+    position: absolute;
+    right: 12px;
+    background: transparent;
+    border: none;
+    color: var(--ink-muted);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: 8px;
+  }
+  .toggle-password-btn:hover {
+    color: var(--brand-navy);
+  }
+
   .btn-primary-3d {
     width: 100%;
     padding: 14px 18px;
@@ -861,7 +886,13 @@
         </div>
         <div class="form-group">
           <label>Password</label>
-          <input type="password" id="login-password" class="input-3d" placeholder="Enter your password" required />
+          <div class="password-input-wrap">
+            <input type="password" id="login-password" class="input-3d" placeholder="Enter your password" required />
+            <button type="button" class="toggle-password-btn" aria-label="Show password" onclick="togglePasswordVisibility('login-password', this)">
+              <svg class="eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="eye-closed" style="display:none;" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </div>
         </div>
         <button type="submit" class="btn-primary-3d" id="login-submit-btn">Access Portfolio</button>
       </form>
@@ -878,7 +909,13 @@
         </div>
         <div class="form-group">
           <label>Create Password</label>
-          <input type="password" id="reg-password" class="input-3d" placeholder="Minimum 4 characters" required />
+          <div class="password-input-wrap">
+            <input type="password" id="reg-password" class="input-3d" placeholder="Minimum 4 characters" required />
+            <button type="button" class="toggle-password-btn" aria-label="Show password" onclick="togglePasswordVisibility('reg-password', this)">
+              <svg class="eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="eye-closed" style="display:none;" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </div>
         </div>
         <div class="form-group">
           <label>Referral / Invitation Code (Optional)</label>
@@ -1341,7 +1378,7 @@
       return { ok: false, error: 'Invalid Number format' };
     }
     const sub = local.slice(3);
-    if (/^(\d){6}$/.test(sub) || ['1234567', '7654321', '0123456'].includes(sub)) {
+    if (/^(\d) {6}$/.test(sub) || ['1234567', '7654321', '0123456'].includes(sub)) {
       return { ok: false, error: 'Please enter a genuine active MTN or Telecel phone number.' };
     }
     return { ok: true, normalized: local };
@@ -1365,6 +1402,20 @@
     t.textContent = msg;
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 3600);
+  }
+
+  function togglePasswordVisibility(inputId, btnEl) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const isHidden = input.type === 'password';
+    input.type = isHidden ? 'text' : 'password';
+    const eyeOpen = btnEl.querySelector('.eye-open');
+    const eyeClosed = btnEl.querySelector('.eye-closed');
+    if (eyeOpen && eyeClosed) {
+      eyeOpen.style.display = isHidden ? 'none' : 'block';
+      eyeClosed.style.display = isHidden ? 'block' : 'none';
+    }
+    btnEl.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
   }
 
   function switchAuthMode(mode) {
